@@ -10,6 +10,13 @@ compression: 'maximum'
 # 런타임 의존성은 모두 순수 JavaScript 이므로 패키징 시 네이티브 빌드가 필요 없습니다.
 npmRebuild: false
 
+# 자동 업데이트 배포처 (GitHub Releases)
+publish:
+  provider: github
+  owner: teddy-wooma
+  repo: giraffe-eunwol
+  releaseType: release
+
 # 자동 업데이트 배포처(publish)는 비워 둡니다.
 # 실제 배포 서버가 생기면 https://www.electron.build/configuration/publish 를 참고해
 # provider/owner/repo 를 추가하면 설정 → 업데이트 탭이 자동으로 살아납니다.

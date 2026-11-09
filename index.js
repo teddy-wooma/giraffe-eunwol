@@ -105,7 +105,7 @@ ipcMain.on('autoUpdateAction', (event, arg, data) => {
             if(process.platform === 'darwin'){
                 macUpdater.install(event.sender)
             } else {
-                autoUpdater.quitAndInstall()
+                autoUpdater.quitAndInstall(true, true)
             }
             break
         default:
