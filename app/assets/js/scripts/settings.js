@@ -13,7 +13,7 @@ const { MSFT_OPCODE, MSFT_REPLY_TYPE, MSFT_ERROR } = require('./assets/js/ipccon
 // 'https://github.com/your-user/eunwol-launcher/releases.atom'.
 // While it is null the About tab just shows the "notes unavailable" message,
 // which is the right behaviour before you have published anything.
-const RELEASE_NOTES_FEED = null
+const RELEASE_NOTES_FEED = 'https://github.com/teddy-wooma/giraffe-eunwol/releases.atom'
 
 const settingsState = {
     invalid: new Set()
@@ -1187,7 +1187,6 @@ async function prepareJavaTab(){
 const settingsTabAbout             = document.getElementById('settingsTabAbout')
 const settingsAboutChangelogTitle  = settingsTabAbout.getElementsByClassName('settingsChangelogTitle')[0]
 const settingsAboutChangelogText   = settingsTabAbout.getElementsByClassName('settingsChangelogText')[0]
-const settingsAboutChangelogButton = settingsTabAbout.getElementsByClassName('settingsChangelogButton')[0]
 
 
 document.getElementById('settingsAboutDevToolsButton').onclick = (e) => {
@@ -1239,8 +1238,9 @@ function populateReleaseNotes(){
 
                 if(id === version){
                     settingsAboutChangelogTitle.innerHTML = entry.find('title').text()
-                    settingsAboutChangelogText.innerHTML = entry.find('content').text()
-                    settingsAboutChangelogButton.href = entry.find('link').attr('href')
+                    const contentHtml = entry.find('content').text()
+                        .replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/i, '')
+                    settingsAboutChangelogText.innerHTML = contentHtml
                 }
             }
 
@@ -1284,6 +1284,10 @@ function settingsUpdateStatusMessage(message){
 // 마크다운 렌더러 의존성을 추가하지 않고, 제목·목록·강조·코드만 처리합니다.
 // 입력은 먼저 이스케이프하므로 노트에 HTML 을 넣어도 그대로 글자로 보입니다.
 function renderReleaseNotes(text){
+    // 릴리즈 본문 첫 줄의 "# 제목" 은 화면 제목과 중복되므로 생략합니다.
+    const source = String(text == null ? '' : text)
+        .replace(/<[^>]*>/g, '')
+        .replace(/^\s*#\s+.*\n+/, '')
     const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const inline = s => escape(s)
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -1298,7 +1302,7 @@ function renderReleaseNotes(text){
         }
     }
 
-    String(text || '').split(/\r?\n/).forEach(raw => {
+    String(source).split(/\r?\n/).forEach(raw => {
         const line = raw.trim()
 
         if(line === ''){
