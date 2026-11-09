@@ -129,6 +129,11 @@ const CONFIG = {
             file: 'dist-mods/aquaticlog-2.0.0+26.2.jar'
         },
         {
+            id: 'generated:dawn:0.2.6',
+            name: 'Dawn Loader 0.2.6',
+            file: 'dist-mods/dawn-standalone.jar'
+        },
+        {
             id: 'generated:bobby:5.2.15+mc26.2',
             name: 'Bobby 5.2.15',
             url: 'https://cdn.modrinth.com/data/M08ruV16/versions/KLiFVFju/bobby-5.2.15%2Bmc26.2.jar'

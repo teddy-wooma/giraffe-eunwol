@@ -203,6 +203,16 @@
                     }
                 },
                 {
+                    "id": "generated:dawn:0.2.6",
+                    "name": "Dawn Loader 0.2.6",
+                    "type": "FabricMod",
+                    "artifact": {
+                        "size": 21493,
+                        "MD5": "c87f290800d5210df32e086463789319",
+                        "url": "https://raw.githubusercontent.com/teddy-wooma/giraffe-eunwol/main/dist-mods/dawn-standalone.jar"
+                    }
+                },
+                {
                     "id": "generated:bobby:5.2.15+mc26.2",
                     "name": "Bobby 5.2.15",
                     "type": "FabricMod",
