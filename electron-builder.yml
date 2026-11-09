@@ -1,0 +1,75 @@
+appId: 'kr.eunwol.launcher'
+productName: '은월 런처'
+artifactName: 'Eunwol-Launcher-setup-${version}.${ext}'
+
+copyright: 'Copyright © 2026 Eunwol'
+
+asar: true
+compression: 'maximum'
+
+# 런타임 의존성은 모두 순수 JavaScript 이므로 패키징 시 네이티브 빌드가 필요 없습니다.
+npmRebuild: false
+
+# 자동 업데이트 배포처(publish)는 비워 둡니다.
+# 실제 배포 서버가 생기면 https://www.electron.build/configuration/publish 를 참고해
+# provider/owner/repo 를 추가하면 설정 → 업데이트 탭이 자동으로 살아납니다.
+# (배포처가 없으면 런처는 "최신 버전" 으로 조용히 처리합니다)
+
+files:
+  - '!{dist,.gitignore,.vscode,docs,dev-app-update.yml,.nvmrc,eslint.config.mjs}'
+  - '!tools'
+  - '!test'
+  - '!.npm-cache'
+  - '!.eb-cache'
+  - '!.verify'
+  - '!.userdata'
+  - '!_branding-original'
+  - '!_private'
+  - '!.userdata*'
+  - '!*.log'
+
+extraResources:
+  - 'libraries'
+
+# Windows Configuration
+win:
+  target:
+    - target: 'nsis'
+      arch: 'x64'
+
+# Windows Installer Configuration
+nsis:
+  oneClick: false
+  multiLanguageInstaller: true
+  installerLanguages:
+    - ko_KR
+    - en_US
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: false
+  shortcutName: '은월 런처'
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# macOS Configuration
+mac:
+  target:
+    - target: 'dmg'
+      arch:
+        - 'x64'
+        - 'arm64'
+  artifactName: '${productName}-setup-${version}-${arch}.${ext}'
+  category: 'public.app-category.games'
+
+# Linux Configuration
+linux:
+  target: 'AppImage'
+  maintainer: 'Eunwol'
+  vendor: 'Eunwol'
+  synopsis: '은월 런처 - 마인크래프트 26.2 실행기'
+  description: '마인크래프트 26.2 (Fabric)를 실행하는 커스텀 런처입니다.'
+  category: 'Game'
+
+directories:
+  buildResources: 'build'
+  output: 'dist'
