@@ -30,3 +30,8 @@ Fabric API, Mod Menu, Cloth Config, Sodium, Iris, EMF, ETF, Entity Culling, Ferr
 
 > 코드 서명이 없어 SmartScreen 경고가 뜰 수 있습니다.
 > **추가 정보 → 실행** 을 선택하세요.
+
+## 🔗 다운로드
+
+- [은월런처 릴리즈 1.0.0](https://github.com/teddy-wooma/giraffe-eunwol/releases/tag/v1.0.0)
+- [Eunwol-Launcher-setup-1.0.0.exe 바로 받기](https://github.com/teddy-wooma/giraffe-eunwol/releases/download/v1.0.0/Eunwol-Launcher-setup-1.0.0.exe)
