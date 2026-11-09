@@ -34,11 +34,11 @@ const CONFIG = {
         // 내부 id. 바꾸면 플레이어의 인스턴스 폴더가 새로 만들어집니다.
         id: 'eunwol',
         name: '은월',
-        description: 'Minecraft 26.2 · Fabric Loader 0.20.1',
-        address: 'localhost',
+        description: '기린월드 · giraffemc.com',
+        address: 'giraffemc.com',
         minecraftVersion: '26.2',
-        // 실행할 때 서버에 자동 접속하지 않습니다.
-        autoconnect: false
+        // PLAY 를 누르면 서버에 자동 접속합니다.
+        autoconnect: true
     },
 
     // https://meta.fabricmc.net/v2/versions/loader/<mcVersion> 의 안정 버전.

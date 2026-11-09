@@ -4,13 +4,13 @@
         {
             "id": "eunwol",
             "name": "은월",
-            "description": "Minecraft 26.2 · Fabric Loader 0.20.1",
+            "description": "기린월드 · giraffemc.com",
             "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij4KPGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJnIiBjeD0iNDIlIiBjeT0iMzglIiByPSI3MCUiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyZTQ0NjgiLz48c3RvcCBvZmZzZXQ9IjAuNiIgc3RvcC1jb2xvcj0iIzE4MjYzZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA3MGIxNCIvPgo8L3JhZGlhbEdyYWRpZW50PjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNiIgZmlsbD0idXJsKCNnKSIvPgo8Y2lyY2xlIGN4PSI2NCIgY3k9IjY0IiByPSI0NyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTZlZWZjIiBzdHJva2Utb3BhY2l0eT0iMC44NSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KPHBhdGggZD0iTTc4IDMwYTM2IDM2IDAgMSAwIDAgNjggMzAgMzAgMCAxIDEgMC02OHoiIGZpbGw9IiNlOWYxZmMiLz4KPGNpcmNsZSBjeD0iNDQiIGN5PSI0MiIgcj0iMS44IiBmaWxsPSIjZGZlOWY3Ii8+CjxjaXJjbGUgY3g9IjkyIiBjeT0iNTYiIHI9IjEuNCIgZmlsbD0iI2RmZTlmNyIvPgo8Y2lyY2xlIGN4PSI4NiIgY3k9IjkyIiByPSIxLjYiIGZpbGw9IiNkZmU5ZjciLz4KPC9zdmc+",
             "version": "1.0.0",
-            "address": "localhost",
+            "address": "giraffemc.com",
             "minecraftVersion": "26.2",
             "mainServer": true,
-            "autoconnect": false,
+            "autoconnect": true,
             "javaOptions": {
                 "supported": ">=25.x",
                 "suggestedMajor": 25,
