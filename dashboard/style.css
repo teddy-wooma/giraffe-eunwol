@@ -275,8 +275,8 @@ th, td { text-align: center; }
 /* 로그 테이블 고정 폭 */
 #panel-audit table { table-layout: fixed; width: 100%; }
 #panel-audit th:nth-child(1) { width: 9%; }
-#panel-audit th:nth-child(2) { width: 20%; }
-#panel-audit th:nth-child(3) { width: 18%; }
-#panel-audit th:nth-child(4) { width: 23%; }
-#panel-audit th:nth-child(5) { width: 30%; }
+#panel-audit th:nth-child(2) { width: 19%; }
+#panel-audit th:nth-child(3) { width: 17%; }
+#panel-audit th:nth-child(4) { width: 21%; }
+#panel-audit th:nth-child(5) { width: 34%; }
 #panel-audit .audit-payload { max-width: none; }
