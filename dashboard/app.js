@@ -64,6 +64,21 @@ function esc(value) {
         .replace(/>/g, '&gt;')
 }
 
+function daysSince(iso) {
+    if (!iso) return null
+    const t = Date.parse(iso)
+    if (Number.isNaN(t)) return null
+    return Math.max(0, Math.floor((Date.now() - t) / 86400000))
+}
+
+function daysChip(iso) {
+    const days = daysSince(iso)
+    if (days == null) return '<span class="muted">-</span>'
+    const cls = days >= 30 ? 'danger' : days >= 14 ? 'warn' : ''
+    const label = days === 0 ? '오늘' : `${days}일`
+    return `<span class="${cls}">${label}</span>`
+}
+
 function statusChip(status) {
     const label = status === 'approved' ? '승인' : status === 'pending' ? '대기' : status === 'banned' ? '밴' : status
     return `<span class="chip ${esc(status)}">${esc(label)}</span>`
@@ -158,7 +173,7 @@ async function loadUsers(q = '') {
     const d = await api(`/api/users?q=${encodeURIComponent(q)}`)
     const body = $('usersBody')
     if (!d.users.length) {
-        body.innerHTML = '<tr><td colspan="6" class="empty">마을원이 없습니다.</td></tr>'
+        body.innerHTML = '<tr><td colspan="7" class="empty">마을원이 없습니다.</td></tr>'
         return
     }
     body.innerHTML = d.users.map((row) => `
@@ -168,6 +183,7 @@ async function loadUsers(q = '') {
             <td>${fmtDuration(row.total_play)}</td>
             <td>${row.session_count}</td>
             <td>${fmtTime(row.last_seen_at)}</td>
+            <td>${daysChip(row.last_seen_at)}</td>
             <td>
                 ${row.status === 'banned'
         ? `<button class="action" data-action="unban" data-uuid="${esc(row.uuid)}">해제</button>`
