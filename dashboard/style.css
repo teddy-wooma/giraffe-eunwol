@@ -253,4 +253,4 @@ span.danger { color: var(--red); }
 .exile-orange { color: #e67e22; }
 .exile-red { color: #e74c3c; }
 
-th, td { text-align: left; }
+th, td { text-align: center; }
