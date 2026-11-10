@@ -29,6 +29,14 @@ async function api(path, options = {}) {
     return data
 }
 
+function fmtClock(seconds) {
+    const s = Math.max(0, Math.floor(Number(seconds) || 0))
+    const h = Math.floor(s / 3600)
+    const m = Math.floor((s % 3600) / 60)
+    const sec = s % 60
+    return [h, m, sec].map((v) => String(v).padStart(2, '0')).join(':')
+}
+
 function fmtTime(iso) {
     if (!iso) return '-'
     const d = new Date(iso)
@@ -192,6 +200,7 @@ async function loadAudit() {
 
 let drawerUuid = null
 let drawerTimer = null
+let liveTimer = null
 
 function closeDrawer() {
     drawerUuid = null
@@ -199,7 +208,39 @@ function closeDrawer() {
         clearInterval(drawerTimer)
         drawerTimer = null
     }
+    if (liveTimer != null) {
+        clearInterval(liveTimer)
+        liveTimer = null
+    }
     $('drawer').classList.add('hidden')
+}
+
+function startLiveTicker(current) {
+    if (liveTimer != null) {
+        clearInterval(liveTimer)
+        liveTimer = null
+    }
+    if (!current) return
+
+    const base = Number(current.play_seconds || 0)
+    const at = Date.parse(current.updated_at || current.joined_at)
+
+    const tick = () => {
+        const playEl = $('dPlay')
+        const ageEl = $('dDataAge')
+        if (playEl == null) return
+        const elapsed = Number.isNaN(at) ? 0 : Math.max(0, Math.floor((Date.now() - at) / 1000))
+        playEl.textContent = fmtClock(base + elapsed)
+        if (ageEl != null) {
+            const time = Number.isNaN(at) ? '-' : new Intl.DateTimeFormat('ko-KR', {
+                timeZone: 'Asia/Seoul',
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            }).format(new Date(at))
+            ageEl.textContent = `${time} (${elapsed}초 전)`
+        }
+    }
+    tick()
+    liveTimer = setInterval(tick, 1000)
 }
 
 async function loadDetail() {
@@ -225,8 +266,9 @@ async function loadDetail() {
                     <span class="k">서버</span><span>${esc(c.server_address || '-')}</span>
                     <span class="k">차원</span><span class="mono">${esc((c.dimension || '-').replace('minecraft:', ''))}</span>
                     <span class="k">좌표</span><span class="mono">${esc(pos)}</span>
-                    <span class="k">플레이</span><span>${fmtDuration(c.play_seconds)}</span>
+                    <span class="k">플레이</span><span id="dPlay">${fmtClock(c.play_seconds)}</span>
                     <span class="k">AFK</span><span>${fmtDuration(c.afk_seconds)}</span>
+                    <span class="k">마지막 수신</span><span id="dDataAge" class="mono">-</span>
                     <span class="k">접속 시작</span><span>${fmtTime(c.joined_at)}</span>
                 </div>
             </section>`)
@@ -272,6 +314,7 @@ async function loadDetail() {
     }
 
     $('dBody').innerHTML = parts.join('')
+    startLiveTicker(d.current || null)
 }
 
 async function openUser(uuid) {
