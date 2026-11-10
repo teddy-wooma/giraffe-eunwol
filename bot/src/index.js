@@ -313,7 +313,14 @@ async function sendInactivityReport() {
         }
 
         const channel = await client.channels.fetch(config.reportChannelId)
-        await channel.send({ embeds: [embed] })
+        if (channel.type === ChannelType.GuildForum) {
+            await channel.threads.create({
+                name: `[미접] ${kstDayKey()} 현황`,
+                message: { embeds: [embed] }
+            })
+        } else {
+            await channel.send({ embeds: [embed] })
+        }
         store.setMeta(db, 'last_report', kstDayKey())
         console.log('[bot] 미접 리포트 전송')
     } catch (err) {
