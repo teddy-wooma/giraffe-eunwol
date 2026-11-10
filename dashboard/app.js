@@ -99,7 +99,7 @@ async function loadOnline() {
         return
     }
     body.innerHTML = d.online.map((row) => `
-        <tr>
+        <tr class="clickable" data-uuid="${esc(row.uuid)}">
             <td>${esc(row.nickname)}</td>
             <td>${esc(row.server_address || '-')}</td>
             <td class="mono">${esc((row.dimension || '-').replace('minecraft:', ''))}</td>
@@ -190,6 +190,101 @@ async function loadAudit() {
 // 탭 / 액션
 // ---------------------------------------------------------------------
 
+let drawerUuid = null
+let drawerTimer = null
+
+function closeDrawer() {
+    drawerUuid = null
+    if (drawerTimer != null) {
+        clearInterval(drawerTimer)
+        drawerTimer = null
+    }
+    $('drawer').classList.add('hidden')
+}
+
+async function loadDetail() {
+    if (drawerUuid == null) return
+    const d = await api(`/api/users/${encodeURIComponent(drawerUuid)}/detail`)
+    const u = d.user
+    $('dName').textContent = u.nickname
+    $('dMeta').textContent = `${u.uuid} · ${u.status === 'approved' ? '승인' : u.status === 'banned' ? '밴' : '대기'} · 총 플레이 ${fmtDuration(d.totalPlay)}`
+
+    const parts = []
+
+    if (d.current) {
+        const c = d.current
+        const pos = c.last_x != null ? `${c.last_x.toFixed(1)}, ${c.last_y.toFixed(1)}, ${c.last_z.toFixed(1)}` : '-'
+        parts.push(`
+            <section class="d-section">
+                <h3><span class="live-dot"></span>현재 세션 (실시간)</h3>
+                <div class="d-grid">
+                    <span class="k">서버</span><span>${esc(c.server_address || '-')}</span>
+                    <span class="k">차원</span><span class="mono">${esc((c.dimension || '-').replace('minecraft:', ''))}</span>
+                    <span class="k">좌표</span><span class="mono">${esc(pos)}</span>
+                    <span class="k">플레이</span><span>${fmtDuration(c.play_seconds)}</span>
+                    <span class="k">AFK</span><span>${fmtDuration(c.afk_seconds)}</span>
+                    <span class="k">접속 시작</span><span>${fmtTime(c.joined_at)}</span>
+                </div>
+            </section>`)
+    } else {
+        parts.push('<section class="d-section"><h3>현재 세션</h3><p class="muted">현재 게임에 접속해 있지 않습니다.</p></section>')
+    }
+
+    parts.push(`
+        <section class="d-section">
+            <h3>최근 게임 세션</h3>
+            ${d.sessions.length === 0 ? '<p class="muted">기록이 없습니다.</p>' : d.sessions.map((s) => `
+                <div class="d-row">
+                    <span>${fmtTime(s.joined_at)} → ${s.left_at ? fmtTime(s.left_at) : '접속 중'}</span>
+                    <span class="mono">${fmtDuration(s.play_seconds)} · AFK ${fmtDuration(s.afk_seconds)}</span>
+                </div>`).join('')}
+        </section>`)
+
+    if (d.skills.length > 0 || d.money.length > 0) {
+        parts.push(`
+            <section class="d-section">
+                <h3>활동 데이터</h3>
+                ${d.skills.map((s) => `<div class="d-row"><span>숙련도 · ${esc(s.job)} Lv.${s.level ?? '-'}</span><span class="mono">${fmtTime(s.observed_at)}</span></div>`).join('')}
+                ${d.money.map((m) => `<div class="d-row"><span>소지금</span><span class="mono">${Number(m.balance).toLocaleString()} · ${fmtTime(m.observed_at)}</span></div>`).join('')}
+            </section>`)
+    }
+
+    parts.push(`
+        <section class="d-section">
+            <h3>런처 세션</h3>
+            ${d.launcher.length === 0 ? '<p class="muted">기록이 없습니다.</p>' : d.launcher.map((l) => `
+                <div class="d-row">
+                    <span>${fmtTime(l.started_at)} → ${l.ended_at ? fmtTime(l.ended_at) : '실행 중'}</span>
+                    <span class="mono">${esc(l.launcher_version || '-')} · ${esc(l.ip_masked || '-')}</span>
+                </div>`).join('')}
+        </section>`)
+
+    if (d.bans.length > 0) {
+        parts.push(`
+            <section class="d-section">
+                <h3>밴 이력</h3>
+                ${d.bans.map((b) => `<div class="d-row"><span>${esc(b.reason || '-')}</span><span class="mono">${fmtTime(b.created_at)} · ${b.active ? '활성' : '해제'}</span></div>`).join('')}
+            </section>`)
+    }
+
+    $('dBody').innerHTML = parts.join('')
+}
+
+async function openUser(uuid) {
+    drawerUuid = uuid
+    $('drawer').classList.remove('hidden')
+    $('dBody').innerHTML = '<p class="muted">불러오는 중…</p>'
+    try {
+        await loadDetail()
+    } catch (err) {
+        $('dBody').innerHTML = `<p class="muted">불러오기 실패: ${esc(err.message)}</p>`
+    }
+    if (drawerTimer != null) clearInterval(drawerTimer)
+    drawerTimer = setInterval(() => {
+        loadDetail().catch(() => {})
+    }, 5000)
+}
+
 function switchTab(tab) {
     state.tab = tab
     document.querySelectorAll('.tab').forEach((el) => {
@@ -279,7 +374,20 @@ document.addEventListener('click', (event) => {
     const action = event.target.closest('button.action')
     if (action) {
         handleAction(action)
+        return
     }
+    const row = event.target.closest('tr.clickable')
+    if (row && row.dataset.uuid) {
+        openUser(row.dataset.uuid)
+    }
+})
+
+$('dClose').addEventListener('click', closeDrawer)
+$('drawer').addEventListener('click', (event) => {
+    if (event.target.id === 'drawer') closeDrawer()
+})
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeDrawer()
 })
 
 $('logoutBtn').addEventListener('click', async () => {

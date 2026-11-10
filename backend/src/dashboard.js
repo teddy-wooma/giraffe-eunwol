@@ -252,6 +252,7 @@ function createDashboard({ db, config }) {
         return db.prepare(`
             SELECT u.uuid, u.nickname, u.status,
                    g.server_address, g.dimension, g.play_seconds, g.afk_seconds, g.joined_at,
+                   g.last_x, g.last_y, g.last_z,
                    l.last_heartbeat_at
             FROM game_sessions g
             JOIN users u ON u.uuid = g.uuid
@@ -293,6 +294,42 @@ function createDashboard({ db, config }) {
             ORDER BY u.last_seen_at DESC
             LIMIT 200
         `).all(like, like)
+    }
+
+    function apiUserDetail(uuid) {
+        const user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(uuid)
+        if (user == null) return null
+
+        const current = db.prepare(
+            'SELECT * FROM game_sessions WHERE uuid = ? AND left_at IS NULL ORDER BY joined_at DESC LIMIT 1'
+        ).get(uuid) || null
+
+        const sessions = db.prepare(
+            'SELECT * FROM game_sessions WHERE uuid = ? ORDER BY joined_at DESC LIMIT 10'
+        ).all(uuid)
+
+        const launcher = db.prepare(
+            `SELECT id, started_at, ended_at, last_heartbeat_at, ip_masked, launcher_version, os
+             FROM launcher_sessions WHERE uuid = ? ORDER BY started_at DESC LIMIT 5`
+        ).all(uuid)
+
+        const skills = db.prepare(
+            'SELECT * FROM skill_events WHERE uuid = ? ORDER BY observed_at DESC LIMIT 10'
+        ).all(uuid)
+
+        const money = db.prepare(
+            'SELECT * FROM money_snapshots WHERE uuid = ? ORDER BY observed_at DESC LIMIT 5'
+        ).all(uuid)
+
+        const bans = db.prepare(
+            'SELECT * FROM bans WHERE uuid = ? ORDER BY created_at DESC LIMIT 5'
+        ).all(uuid)
+
+        const totalPlay = db.prepare(
+            'SELECT COALESCE(SUM(play_seconds), 0) AS s FROM game_sessions WHERE uuid = ?'
+        ).get(uuid).s
+
+        return { user, current, sessions, launcher, skills, money, bans, totalPlay }
     }
 
     function apiAudit(limit) {
@@ -391,6 +428,17 @@ function createDashboard({ db, config }) {
                 }
                 audit(me.name, `approval_${decision}`, request.uuid, { requestId, note: body.note || null, source: 'dashboard' })
                 sendJson(res, 200, { ok: true })
+                return true
+            }
+
+            if (p.startsWith('/api/users/') && p.endsWith('/detail') && req.method === 'GET') {
+                const uuid = p.split('/')[3]
+                const detail = apiUserDetail(uuid)
+                if (detail == null) {
+                    sendJson(res, 404, { error: 'NOT_FOUND' })
+                    return true
+                }
+                sendJson(res, 200, { ok: true, ...detail })
                 return true
             }
 
