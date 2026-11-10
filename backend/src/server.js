@@ -486,6 +486,13 @@ async function modEvents(ctx) {
 // 관리자 핸들러
 // -----------------------------------------------------------------------------
 
+async function adminAudit(ctx) {
+    const { db, url } = ctx
+    const limit = Math.min(Number(url.searchParams.get('limit') || 100), 500)
+    const rows = db.prepare('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?').all(limit)
+    return { status: 200, payload: { ok: true, audit: rows } }
+}
+
 async function adminRequests(ctx) {
     const { db, url } = ctx
     const status = url.searchParams.get('status')
@@ -651,6 +658,7 @@ const routes = [
     ['POST', /^\/v1\/mod\/session\/end$/, modSessionEnd, false],
     ['POST', /^\/v1\/mod\/events$/, modEvents, false],
 
+    ['GET', /^\/v1\/admin\/audit$/, adminAudit, true],
     ['GET', /^\/v1\/admin\/requests$/, adminRequests, true],
     ['POST', /^\/v1\/admin\/requests\/([^/]+)\/decision$/, adminDecision, true],
     ['POST', /^\/v1\/admin\/users\/([^/]+)\/ban$/, adminBan, true],

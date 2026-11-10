@@ -164,6 +164,7 @@ async function loadUsers(q = '') {
                 ${row.status === 'banned'
         ? `<button class="action" data-action="unban" data-uuid="${esc(row.uuid)}">해제</button>`
         : `<button class="action danger" data-action="ban" data-uuid="${esc(row.uuid)}">밴</button>`}
+                <button class="action danger" data-action="delete" data-uuid="${esc(row.uuid)}" data-name="${esc(row.nickname)}">삭제</button>
             </td>
         </tr>`).join('')
 }
@@ -238,6 +239,17 @@ async function handleAction(button) {
             await loadOverview()
             if (state.tab === 'users') await loadUsers($('userSearch').value)
             if (state.tab === 'banned') await loadBanned()
+            return
+        }
+
+        if (action === 'delete') {
+            const uuid = button.dataset.uuid
+            const name = button.dataset.name || uuid
+            if (!confirm(`${name} 님을 마을원에서 삭제할까요?\n세션·기록이 함께 삭제되며 되돌릴 수 없습니다.`)) return
+            await api(`/api/users/${encodeURIComponent(uuid)}`, { method: 'DELETE' })
+            toast('마을원을 삭제했습니다.')
+            await loadOverview()
+            await loadUsers($('userSearch').value)
             return
         }
 

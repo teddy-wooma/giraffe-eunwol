@@ -394,6 +394,37 @@ function createDashboard({ db, config }) {
                 return true
             }
 
+            if (p.startsWith('/api/users/') && req.method === 'DELETE') {
+                const uuid = p.split('/')[3]
+                const user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(uuid)
+                if (user == null) {
+                    sendJson(res, 404, { error: 'NOT_FOUND' })
+                    return true
+                }
+                db.exec('BEGIN')
+                try {
+                    db.prepare('DELETE FROM launcher_sessions WHERE uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM game_sessions WHERE uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM skill_events WHERE uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM money_snapshots WHERE uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM bans WHERE uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM discord_requests WHERE target_uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM approval_requests WHERE uuid = ?').run(uuid)
+                    db.prepare('DELETE FROM users WHERE uuid = ?').run(uuid)
+                    db.exec('COMMIT')
+                } catch (err) {
+                    db.exec('ROLLBACK')
+                    throw err
+                }
+                audit(me.name, 'user_deleted', uuid, {
+                    nickname: user.nickname,
+                    status: user.status,
+                    source: 'dashboard'
+                })
+                sendJson(res, 200, { ok: true })
+                return true
+            }
+
             if (p.startsWith('/api/users/') && p.endsWith('/ban') && req.method === 'POST') {
                 const uuid = p.split('/')[3]
                 const body = await readBody(req)

@@ -242,6 +242,53 @@ async function applyDecision(requestId, decision, actor, note) {
     return { ok: true, message: `${decision === 'approved' ? '승인' : decision === 'denied' ? '거절' : '보류'} 처리했습니다.` }
 }
 
+async function syncDashboardDecisions() {
+    try {
+        const res = await backend.request('GET', '/v1/admin/audit?limit=50')
+        if (res.status !== 200 || res.body == null) return
+        const rows = res.body.audit || []
+
+        for (const row of rows) {
+            if (!row.action || !row.action.startsWith('approval_')) continue
+
+            let payload = {}
+            try {
+                payload = JSON.parse(row.payload_json || '{}')
+            } catch (_) {
+                payload = {}
+            }
+            if (payload.source !== 'dashboard' || !payload.requestId) continue
+
+            const record = store.get(db, payload.requestId)
+            if (record == null) continue
+            if (record.status !== 'pending' && record.status !== 'held') continue
+
+            const decision = row.action.replace('approval_', '')
+            const label = decision === 'approved' ? '승인' : decision === 'denied' ? '거절' : '보류'
+
+            try {
+                const thread = await client.channels.fetch(record.thread_id)
+                await thread.send(
+                    `- 대시보드에서 ${label}됨\n처리자: ${row.actor || '알 수 없음'}\n시각: ${kst(row.created_at)}`
+                )
+                const tag = tagId(TAGS[decision] || TAGS.done)
+                if (tag) await thread.setAppliedTags([tag])
+                await thread.setLocked(true)
+                setTimeout(() => {
+                    thread.setArchived(true).catch(() => {})
+                }, 3000)
+            } catch (err) {
+                console.error('[bot] 대시보드 결정 스레드 갱신 실패:', err.message)
+            }
+
+            store.setStatus(db, payload.requestId, decision)
+            console.log(`[bot] 대시보드 결정 반영: ${payload.requestId} ${decision} by ${row.actor}`)
+        }
+    } catch (err) {
+        console.error('[bot] audit 조회 실패:', err.message)
+    }
+}
+
 // -----------------------------------------------------------------------------
 // 이벤트
 // -----------------------------------------------------------------------------
@@ -269,6 +316,9 @@ client.once(Events.ClientReady, async (readyClient) => {
 
     await poll()
     pollTimer = setInterval(poll, config.pollMs)
+
+    await syncDashboardDecisions()
+    setInterval(syncDashboardDecisions, 15000)
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {
