@@ -466,6 +466,8 @@ function getPlatformIcon(filename){
     return path.join(__dirname, 'app', 'assets', 'images', `${filename}.${ext}`)
 }
 
+require('./backend-client').register()
+
 app.on('ready', () => {
     // 어떤 이유로든 이 호출이 실패해도 창은 반드시 떠야 합니다.
     try { launchLogSystemInfo() } catch (err) { console.error('[launchLog]', err) }

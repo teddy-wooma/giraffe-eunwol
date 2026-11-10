@@ -4551,3 +4551,50 @@ body {
 .settingsDistroModState.installed {
     color: #8fe28f;
 }
+
+/* 승인 게이트 */
+#gateContainer{
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 7, 11, 0.72);
+    backdrop-filter: blur(4px);
+    z-index: 1200;
+}
+.gateDialog{
+    width: 420px;
+    max-width: 90vw;
+    background: #141a20;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.gateIcon{ font-size: 34px; margin-bottom: 12px; }
+.gateDialog h2{ font-size: 19px; color: #eef2f6; margin: 0 0 10px; font-weight: 600; }
+.gateDialog p{ font-size: 13px; color: #93a1ae; line-height: 1.6; margin: 0 0 14px; }
+.gateMeta{
+    font-size: 12px;
+    color: #5f6c78;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 18px;
+    font-family: Consolas, monospace;
+}
+.gateButtons{ display: flex; gap: 10px; justify-content: center; }
+.gateButton{
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #cfd8e0;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.gateButton:hover{ background: rgba(255, 255, 255, 0.12); }
+.gateButton.primary{ background: #cfd6dc; border-color: #cfd6dc; color: #111; }
+.gateButton.primary:hover{ background: #e3e9ee; }

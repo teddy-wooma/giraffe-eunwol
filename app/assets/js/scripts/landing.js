@@ -441,6 +441,16 @@ async function dlAsync(login = true) {
         }
     }
 
+    // 마을 승인 게이트: 승인되지 않은 계정은 게임을 실행할 수 없습니다.
+    if(login) {
+        const approved = await Gate.ensureApproved(ConfigManager.getSelectedAccount())
+        if(!approved) {
+            setLaunchDetails('')
+            toggleLaunchArea(false)
+            return
+        }
+    }
+
     setLaunchDetails(Lang.queryJS('landing.dlAsync.pleaseWait'))
     toggleLaunchArea(true)
     setLaunchPercentage(0, 100)
