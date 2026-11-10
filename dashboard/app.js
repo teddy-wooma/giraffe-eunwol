@@ -64,6 +64,24 @@ function esc(value) {
         .replace(/>/g, '&gt;')
 }
 
+function exileInfo(lastSeen) {
+    if (!lastSeen) return null
+    const seen = Date.parse(lastSeen)
+    if (Number.isNaN(seen)) return null
+    const days = Math.max(0, Math.floor((Date.now() - seen) / 86400000))
+    const remaining = Math.max(0, 14 - days)
+    const cls = remaining <= 3 ? 'exile-red' : remaining <= 6 ? 'exile-orange' : remaining <= 9 ? 'exile-yellow' : 'exile-white'
+    const dot = remaining <= 3 ? '🔴' : remaining <= 6 ? '🟠' : remaining <= 9 ? '🟡' : '⚪'
+    return { days, remaining, cls, dot }
+}
+
+function exileCell(lastSeen) {
+    const info = exileInfo(lastSeen)
+    if (info == null) return '<span class="muted">-</span>'
+    const label = info.remaining > 0 ? `${info.remaining}일 남음` : '추방 기준 도달'
+    return `<span class="${info.cls}">${info.dot} ${label}</span>`
+}
+
 function daysSince(iso) {
     if (!iso) return null
     const t = Date.parse(iso)
@@ -173,17 +191,18 @@ async function loadUsers(q = '') {
     const d = await api(`/api/users?q=${encodeURIComponent(q)}`)
     const body = $('usersBody')
     if (!d.users.length) {
-        body.innerHTML = '<tr><td colspan="7" class="empty">마을원이 없습니다.</td></tr>'
+        body.innerHTML = '<tr><td colspan="8" class="empty">마을원이 없습니다.</td></tr>'
         return
     }
     body.innerHTML = d.users.map((row) => `
         <tr>
-            <td>${esc(row.nickname)}</td>
+            <td><img class="avatar" src="https://mc-heads.net/avatar/${encodeURIComponent(row.nickname)}/32" alt="">${esc(row.nickname)}</td>
             <td>${statusChip(row.status)}</td>
+            <td>${daysChip(row.last_seen_at)}</td>
+            <td>${exileCell(row.last_seen_at)}</td>
             <td>${fmtDuration(row.total_play)}</td>
             <td>${row.session_count}</td>
             <td>${fmtTime(row.last_seen_at)}</td>
-            <td>${daysChip(row.last_seen_at)}</td>
             <td>
                 ${row.status === 'banned'
         ? `<button class="action" data-action="unban" data-uuid="${esc(row.uuid)}">해제</button>`
