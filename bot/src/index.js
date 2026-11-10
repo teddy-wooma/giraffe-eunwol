@@ -258,7 +258,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.deferReply({ ephemeral: true })
 
     try {
-        const result = await applyDecision(requestId, decision, interaction.user.tag, null)
+        const result = await applyDecision(requestId, decision, `${interaction.user.tag} (${interaction.user.id})`, null)
         await interaction.editReply(result.message)
     } catch (err) {
         console.error('[bot] 버튼 처리 실패:', err)
@@ -282,7 +282,7 @@ client.on(Events.MessageCreate, async (message) => {
     const note = match[2].trim() || null
 
     try {
-        const result = await applyDecision(record.request_id, decision, message.author.tag, note)
+        const result = await applyDecision(record.request_id, decision, `${message.author.tag} (${message.author.id})`, note)
         await message.reply(result.message)
     } catch (err) {
         console.error('[bot] 댓글 처리 실패:', err)

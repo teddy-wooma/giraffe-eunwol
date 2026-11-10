@@ -503,6 +503,8 @@ async function adminDecision(ctx) {
     const { db, body, params, actor } = ctx
     const requestId = params[0]
     const decision = body.decision
+    // 디스코드 봇이 보낸 처리자(닉네임#태그)를 우선 사용
+    const actorName = typeof body.actor === 'string' && body.actor.trim() !== '' ? body.actor.trim() : actor
 
     if (!['approved', 'denied', 'held'].includes(decision)) {
         throw new ApiError(400, 'BAD_REQUEST', 'decision 은 approved / denied / held 중 하나여야 합니다.')
@@ -521,16 +523,16 @@ async function adminDecision(ctx) {
             `UPDATE approval_requests
              SET status = ?, handled_by = ?, handled_at = ?, note = ?
              WHERE id = ?`
-        ).run(decision, actor, nowIso(), body.note || null, requestId)
+        ).run(decision, actorName, nowIso(), body.note || null, requestId)
 
         if (decision === 'approved') {
             db.prepare(
                 `UPDATE users
                  SET status = 'approved', approved_by = ?, approved_at = ?, updated_at = ?
                  WHERE uuid = ?`
-            ).run(actor, nowIso(), nowIso(), request.uuid)
+            ).run(actorName, nowIso(), nowIso(), request.uuid)
         }
-        audit(db, actor, `approval_${decision}`, request.uuid, {
+        audit(db, actorName, `approval_${decision}`, request.uuid, {
             requestId,
             note: body.note || null
         })
@@ -551,7 +553,7 @@ async function adminBan(ctx) {
         db.prepare(
             'INSERT INTO bans (uuid, reason, banned_by, created_at, expires_at, active) VALUES (?, ?, ?, ?, ?, 1)'
         ).run(uuid, body.reason || null, actor, nowIso(), body.until || null)
-        db.prepare(`UPDATE users SET status = 'banned', updated_at = ? WHERE uuid = ?`)
+        db.prepare('UPDATE users SET status = \'banned\', updated_at = ? WHERE uuid = ?')
             .run(nowIso(), uuid)
         audit(db, actor, 'ban', uuid, { reason: body.reason || null, until: body.until || null })
     })
@@ -569,7 +571,7 @@ async function adminUnban(ctx) {
 
     tx(db, () => {
         db.prepare('UPDATE bans SET active = 0 WHERE uuid = ? AND active = 1').run(uuid)
-        db.prepare(`UPDATE users SET status = 'approved', updated_at = ? WHERE uuid = ?`)
+        db.prepare('UPDATE users SET status = \'approved\', updated_at = ? WHERE uuid = ?')
             .run(nowIso(), uuid)
         audit(db, actor, 'unban', uuid, {})
     })
@@ -615,8 +617,8 @@ async function adminOverview(ctx) {
     const online = db.prepare(
         'SELECT COUNT(*) AS c FROM launcher_sessions WHERE ended_at IS NULL AND last_heartbeat_at > ?'
     ).get(twoMinutesAgo).c
-    const pending = db.prepare(`SELECT COUNT(*) AS c FROM approval_requests WHERE status = 'pending'`).get().c
-    const activeBans = db.prepare(`SELECT COUNT(*) AS c FROM users WHERE status = 'banned'`).get().c
+    const pending = db.prepare('SELECT COUNT(*) AS c FROM approval_requests WHERE status = \'pending\'').get().c
+    const activeBans = db.prepare('SELECT COUNT(*) AS c FROM users WHERE status = \'banned\'').get().c
     const todayUnique = db.prepare(
         'SELECT COUNT(DISTINCT uuid) AS c FROM launcher_sessions WHERE started_at >= ?'
     ).get(todayStart).c
