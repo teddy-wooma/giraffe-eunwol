@@ -252,3 +252,5 @@ span.danger { color: var(--red); }
 .exile-yellow { color: #f1c40f; }
 .exile-orange { color: #e67e22; }
 .exile-red { color: #e74c3c; }
+
+th, td { text-align: left; }
