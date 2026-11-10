@@ -373,6 +373,11 @@ client.once(Events.ClientReady, async (readyClient) => {
     setInterval(syncDashboardDecisions, 15000)
 
     scheduleInactivityReport()
+
+    // 최초 1회 리포트 전송
+    if (config.reportChannelId && store.getMeta(db, 'last_report') === null) {
+        await sendInactivityReport()
+    }
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {
