@@ -237,3 +237,6 @@ tr.clickable:hover { background: rgba(122, 162, 247, 0.07); }
 
 .drawer-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .panel-actions { display: flex; align-items: center; gap: 10px; }
+/* 미접 일수 색상 */
+span.warn { color: var(--amber); }
+span.danger { color: var(--red); }
