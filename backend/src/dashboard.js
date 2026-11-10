@@ -51,6 +51,8 @@ function isSecure(req) {
         (req.headers.origin || '').startsWith('https://')
 }
 
+const recentLogs = new Map()
+
 function createDashboard({ db, config }) {
     const secret = config.dashboardSecret || config.jwtSecret
 
@@ -114,6 +116,22 @@ function createDashboard({ db, config }) {
         ).run(actor || null, action, targetUuid || null, payload == null ? null : JSON.stringify(payload), new Date().toISOString())
     }
 
+    function logVisit(action, req, ip, me) {
+        const key = action + ':' + (me && me.sub ? me.sub : ip)
+        const now = Date.now()
+        if (recentLogs.get(key) != null && now - recentLogs.get(key) < 5 * 60 * 1000) {
+            return
+        }
+        recentLogs.set(key, now)
+
+        const actor = me && me.name ? me.name : 'anonymous (' + (ip || 'unknown') + ')'
+        audit(actor, action, null, {
+            ip: ip || null,
+            ua: req.headers['user-agent'] || null,
+            path: req.url
+        })
+    }
+
     function serveStatic(res, name) {
         const file = path.join(DASHBOARD_DIR, name)
         if (!file.startsWith(DASHBOARD_DIR)) return false
@@ -152,7 +170,7 @@ function createDashboard({ db, config }) {
         res.end()
     }
 
-    async function authCallback(req, res, url) {
+    async function authCallback(req, res, url, ip) {
         const code = url.searchParams.get('code')
         const state = url.searchParams.get('state')
         const cookies = parseCookies(req)
@@ -197,6 +215,10 @@ function createDashboard({ db, config }) {
             }
 
             if (!config.discordAdminRoleId || !roles.includes(config.discordAdminRoleId)) {
+                audit('denied: ' + user.username + ' (' + user.id + ')', 'dashboard_login_denied', null, {
+                    ip: ip || null,
+                    ua: req.headers['user-agent'] || null
+                })
                 sendHtml(res, 403, `<!doctype html><meta charset="utf-8"><body style="background:#0f1419;color:#e6edf3;font-family:sans-serif;padding:40px">
                     <h1>접근 권한이 없습니다</h1>
                     <p>마을 관리자 역할이 있는 계정만 대시보드를 사용할 수 있습니다.</p>
@@ -213,7 +235,8 @@ function createDashboard({ db, config }) {
 
             audit(`${displayName} (${user.id})`, 'dashboard_login', null, {
                 username: user.username,
-                ip: req.socket.remoteAddress || null
+                ip: ip || req.socket.remoteAddress || null,
+                ua: req.headers['user-agent'] || null
             })
 
             res.writeHead(302, {
@@ -368,6 +391,14 @@ function createDashboard({ db, config }) {
     return async function handle(req, res, url, ip) {
         const p = url.pathname
 
+        if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
+            const current = session(req)
+            logVisit(current ? 'dashboard_access' : 'dashboard_visit', req, ip, current)
+        }
+        if (req.method === 'GET' && p === '/auth/discord') {
+            logVisit('dashboard_login_attempt', req, ip, session(req))
+        }
+
         // 정적 파일
         if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
             if (serveStatic(res, 'index.html')) return true
@@ -381,7 +412,7 @@ function createDashboard({ db, config }) {
             return true
         }
         if (p === '/auth/discord/callback' && req.method === 'GET') {
-            await authCallback(req, res, url)
+            await authCallback(req, res, url, ip)
             return true
         }
         if (p === '/auth/logout' && req.method === 'POST') {
