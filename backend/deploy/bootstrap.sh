@@ -95,10 +95,14 @@ systemctl restart eunwol-backend
 sleep 2
 
 echo "==> Oracle iptables (80/443)"
+# REJECT 규칙보다 앞에 넣어야 실제로 허용됩니다.
 for port in 80 443; do
-    if ! iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null; then
-        iptables -I INPUT 6 -p tcp --dport "$port" -j ACCEPT
-    fi
+    iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+done
+REJECT_LINE="$(iptables -L INPUT -n --line-numbers | awk '/REJECT/ {print $1; exit}')"
+REJECT_LINE="${REJECT_LINE:-1}"
+for port in 80 443; do
+    iptables -I INPUT "$REJECT_LINE" -p tcp --dport "$port" -j ACCEPT
 done
 netfilter-persistent save >/dev/null 2>&1 || true
 
