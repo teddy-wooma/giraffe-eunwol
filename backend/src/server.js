@@ -45,6 +45,7 @@ function loadConfig(env = process.env) {
         discordGuildId: env.DISCORD_GUILD_ID || '',
         discordAdminRoleId: env.DISCORD_ADMIN_ROLE_ID || '',
         dashboardSecret: env.DASHBOARD_SECRET || env.JWT_SECRET || 'dev-dashboard-secret',
+        blockedIps: (env.BLOCKED_IPS || '').split(',').map((s) => s.trim()).filter(Boolean),
         ttl: {
             launcher: Number(env.LAUNCHER_TOKEN_TTL || 86400),
             pending: Number(env.PENDING_TOKEN_TTL || 86400),
@@ -692,6 +693,11 @@ function buildServer({ db, config }) {
         const ip = clientIp(req)
 
         try {
+            if (config.blockedIps != null && config.blockedIps.includes(ip)) {
+                sendJson(res, 403, { error: { code: 'BLOCKED', message: 'Forbidden' }, traceId: requestId }, requestId)
+                return
+            }
+
             if (url.pathname === '/healthz') {
                 sendJson(res, 200, { ok: true, at: nowIso() }, requestId)
                 return
