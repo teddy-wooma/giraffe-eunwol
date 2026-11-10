@@ -203,3 +203,69 @@ sudo crontab -e
 - [ ] HTTPS 인증서 발급됨
 - [ ] `/v1/admin/*` 외부 차단 확인
 - [ ] 백업 cron 등록
+
+---
+
+## 10. DuckDNS 로 도메인 없이 HTTPS
+
+도메인 구매 없이 무료로 HTTPS 를 쓰는 방법입니다.
+
+### 10.1 서브도메인 만들기
+
+1. https://www.duckdns.org 접속 → GitHub/Google 등으로 로그인
+2. `add domain` 에 원하는 이름 입력 (예: `eunwol`) → **eunwol.duckdns.org** 생성
+3. `current ip` 에 **오라클 인스턴스 공인 IP** 입력 → `update ip`
+4. 페이지 상단의 **token** 을 메모 (비밀값)
+
+확인:
+
+```bash
+nslookup eunwol.duckdns.org
+# Address: <오라클 공인 IP>
+```
+
+### 10.2 Caddy 설정
+
+`/etc/caddy/Caddyfile` 의 도메인을 DuckDNS 주소로:
+
+```
+eunwol.duckdns.org {
+    reverse_proxy 127.0.0.1:8787
+
+    @admin path /v1/admin/*
+    respond @admin 403
+
+    encode gzip
+}
+```
+
+```bash
+sudo systemctl reload caddy
+sudo journalctl -u caddy -n 50 --no-pager   # 인증서 발급 로그
+```
+
+- 80/443 이 열려 있어야 Let's Encrypt(HTTP-01) 발급이 됩니다.
+- 발급 후 `https://eunwol.duckdns.org/healthz` 확인
+
+### 10.3 IP 자동 갱신 (선택)
+
+오라클 공인 IP 는 보통 고정이지만, 인스턴스를 재생성하면 바뀝니다.
+
+```bash
+chmod +x /opt/eunwol/repo/backend/deploy/duckdns-update.sh
+DUCKDNS_DOMAIN=eunwol DUCKDNS_TOKEN=<토큰> /opt/eunwol/repo/backend/deploy/duckdns-update.sh
+```
+
+cron 등록 (10분마다):
+
+```cron
+*/10 * * * * DUCKDNS_DOMAIN=eunwol DUCKDNS_TOKEN=<토큰> /opt/eunwol/repo/backend/deploy/duckdns-update.sh >/dev/null 2>&1
+```
+
+> 토큰은 비밀값입니다. 저장소에 커밋하지 마세요.
+
+### 10.4 주의
+
+- DuckDNS 는 무료 서비스로 **SLA 가 없습니다.** 장애 시 신규 승인 확인이 지연될 수 있습니다.
+- 일부 네트워크에서 `duckdns.org` 가 차단될 수 있습니다.
+- 런처의 백엔드 주소는 설정값으로 두어, 나중에 도메인으로 교체할 수 있게 합니다.
