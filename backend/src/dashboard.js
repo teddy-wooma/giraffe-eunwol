@@ -116,6 +116,19 @@ function createDashboard({ db, config }) {
         ).run(actor || null, action, targetUuid || null, payload == null ? null : JSON.stringify(payload), new Date().toISOString())
     }
 
+    function rememberAdminIp(ip, me) {
+        if (!ip || !me || !me.sub) return
+        db.prepare(
+            `INSERT INTO admin_ip_map (ip, discord_id, name, updated_at) VALUES (?, ?, ?, ?)
+             ON CONFLICT(ip) DO UPDATE SET discord_id = excluded.discord_id, name = excluded.name, updated_at = excluded.updated_at`
+        ).run(ip, me.sub, me.name || me.sub, new Date().toISOString())
+    }
+
+    function lookupAdminIp(ip) {
+        if (!ip) return null
+        return db.prepare('SELECT * FROM admin_ip_map WHERE ip = ?').get(ip) || null
+    }
+
     function logVisit(action, req, ip, me) {
         const key = action + ':' + (me && me.sub ? me.sub : ip)
         const now = Date.now()
@@ -124,11 +137,21 @@ function createDashboard({ db, config }) {
         }
         recentLogs.set(key, now)
 
-        const actor = me && me.name ? me.name : 'anonymous (' + (ip || 'unknown') + ')'
+        let actor = me && me.name ? me.name : 'anonymous (' + (ip || 'unknown') + ')'
+        let estimated = null
+        if (me == null) {
+            estimated = lookupAdminIp(ip)
+            if (estimated != null) {
+                actor = estimated.name + ' (추정)'
+            }
+        }
+
         audit(actor, action, null, {
             ip: ip || null,
             ua: req.headers['user-agent'] || null,
-            path: req.url
+            path: req.url,
+            estimated: estimated != null,
+            estimatedDiscordId: estimated ? estimated.discord_id : null
         })
     }
 
@@ -232,6 +255,8 @@ function createDashboard({ db, config }) {
                 secret,
                 SESSION_TTL
             )
+
+            rememberAdminIp(ip, { sub: user.id, name: `${displayName} (${user.username})` })
 
             audit(`${displayName} (${user.id})`, 'dashboard_login', null, {
                 username: user.username,
@@ -393,6 +418,7 @@ function createDashboard({ db, config }) {
 
         if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
             const current = session(req)
+            if (current != null) rememberAdminIp(ip, current)
             logVisit(current ? 'dashboard_access' : 'dashboard_visit', req, ip, current)
         }
         if (req.method === 'GET' && p === '/auth/discord') {

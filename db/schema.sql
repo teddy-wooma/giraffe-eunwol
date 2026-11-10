@@ -186,6 +186,16 @@ CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target_uuid, created_at);
 
 -- -----------------------------------------------------------------------------
+-- 관리자 IP 매핑 (로그인 전 추정용)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admin_ip_map (
+    ip         TEXT PRIMARY KEY,
+    discord_id TEXT,
+    name       TEXT,
+    updated_at TEXT NOT NULL
+);
+
+-- -----------------------------------------------------------------------------
 -- 대시보드 접속 현황
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS dashboard_presence (
