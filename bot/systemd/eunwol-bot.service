@@ -1,0 +1,22 @@
+[Unit]
+Description=Eunwol Discord Bot
+After=network-online.target eunwol-backend.service
+Wants=network-online.target
+Requires=eunwol-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/eunwol/repo/bot
+ExecStart=/usr/bin/node --env-file=/opt/eunwol/repo/bot/.env /opt/eunwol/repo/bot/src/index.js
+Environment=NODE_ENV=production
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/eunwol
+
+[Install]
+WantedBy=multi-user.target

@@ -21,3 +21,8 @@ desktop.ini
 backend/data/
 backend/.env
 backend/*.sqlite
+# discord bot
+bot/node_modules/
+bot/.env
+bot/data/
+bot/*.sqlite
