@@ -5,10 +5,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=eunwol
-Group=eunwol
-WorkingDirectory=/opt/eunwol-backend
-ExecStart=/usr/bin/node --env-file=/opt/eunwol-backend/.env /opt/eunwol-backend/src/server.js
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/eunwol/repo/backend
+ExecStart=/usr/bin/node --env-file=/opt/eunwol/repo/backend/.env /opt/eunwol/repo/backend/src/server.js
+Environment=NODE_ENV=production
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

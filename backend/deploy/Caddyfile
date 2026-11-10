@@ -1,0 +1,12 @@
+# /etc/caddy/Caddyfile
+# api.example.com 을 실제 도메인(또는 DuckDNS 서브도메인)으로 바꾸세요.
+
+api.example.com {
+    reverse_proxy 127.0.0.1:8787
+
+    # 관리자 API 는 외부에서 차단 (봇/관리자는 127.0.0.1 로 직접 호출)
+    @admin path /v1/admin/*
+    respond @admin 403
+
+    encode gzip
+}
