@@ -429,6 +429,12 @@ function createDashboard({ db, config }) {
 
         // 정적 파일
         if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
+            const current = session(req)
+            if (current == null) {
+                res.writeHead(302, { Location: '/auth/discord', 'Cache-Control': 'no-store' })
+                res.end()
+                return true
+            }
             if (serveStatic(res, 'index.html')) return true
         }
         if (req.method === 'GET' && (p === '/app.js' || p === '/style.css')) {
