@@ -378,7 +378,7 @@ function scheduleInactivityReport() {
         if (hour === config.reportHourKst && minute < 10 && store.getMeta(db, 'last_report') !== key) {
             await sendInactivityReport()
         }
-    }, 10 * 60 * 1000)
+    }, 60 * 1000)
 }
 
 // -----------------------------------------------------------------------------
