@@ -269,3 +269,37 @@ cron 등록 (10분마다):
 - DuckDNS 는 무료 서비스로 **SLA 가 없습니다.** 장애 시 신규 승인 확인이 지연될 수 있습니다.
 - 일부 네트워크에서 `duckdns.org` 가 차단될 수 있습니다.
 - 런처의 백엔드 주소는 설정값으로 두어, 나중에 도메인으로 교체할 수 있게 합니다.
+
+---
+
+## 11. 모니터링
+
+### GitHub Actions (기본)
+
+`.github/workflows/uptime.yml` 이 5분마다 `/healthz` 를 확인합니다.
+실패하면 GitHub이 저장소 소유자에게 이메일 알림을 보냅니다.
+
+### UptimeRobot (권장)
+
+1. https://uptimerobot.com 가입 (무료: 모니터 50개, 5분 간격)
+2. Add New Monitor
+   - Type: HTTPS
+   - URL: https://eunwol.duckdns.org/healthz
+   - Interval: 5분
+   - Keyword: `"ok":true`
+3. Alert Contacts 에 이메일/디스코드 웹훅 등록
+
+### 서버 내부 확인
+
+```bash
+sudo systemctl status eunwol-backend eunwol-bot caddy
+sudo journalctl -u eunwol-backend -n 50 --no-pager
+ls -lh /var/backups/eunwol | tail
+```
+
+## 12. cron 정리
+
+| 파일 | 주기 | 내용 |
+| --- | --- | --- |
+| `/etc/cron.d/eunwol-backup` | 매일 04:00 | SQLite 백업 (14일 보관) |
+| `/etc/cron.d/eunwol-duckdns` | 10분 | DuckDNS IP 갱신 |

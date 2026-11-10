@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS launcher_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_ls_uuid_started ON launcher_sessions(uuid, started_at);
 CREATE INDEX IF NOT EXISTS idx_ls_open ON launcher_sessions(ended_at, last_heartbeat_at);
+CREATE INDEX IF NOT EXISTS idx_ls_uuid_open ON launcher_sessions(uuid, ended_at);
 
 -- -----------------------------------------------------------------------------
 -- 게임 세션 (서버 접속 단위, 클라이언트 모드 보고)
@@ -87,6 +88,8 @@ CREATE TABLE IF NOT EXISTS game_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_gs_uuid_joined ON game_sessions(uuid, joined_at);
 CREATE INDEX IF NOT EXISTS idx_gs_open ON game_sessions(left_at);
+CREATE INDEX IF NOT EXISTS idx_gs_uuid_open ON game_sessions(uuid, left_at, joined_at);
+CREATE INDEX IF NOT EXISTS idx_gs_alive ON game_sessions(left_at, updated_at);
 
 -- -----------------------------------------------------------------------------
 -- 직업 숙련도 이벤트
