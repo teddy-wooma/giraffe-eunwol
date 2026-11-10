@@ -6,6 +6,7 @@ const { open, tx } = require('./db')
 const jwt = require('./jwt')
 const { verifyMinecraftToken } = require('./mojang')
 const { createDashboard } = require('./dashboard')
+const { computeInactivity } = require('./inactivity')
 const {
     nowIso,
     todayCompact,
@@ -496,25 +497,9 @@ async function modEvents(ctx) {
 
 async function adminInactivity(ctx) {
     const { db } = ctx
-    const now = Date.now()
-    const rows = db.prepare(`
-        SELECT uuid, nickname, status, last_seen_at FROM users
-        WHERE status != 'banned' AND last_seen_at IS NOT NULL
-    `).all()
-    const thresholds = [3, 5, 7, 10, 14]
-    const buckets = thresholds.map((days) => ({ days, users: [] }))
-    for (const row of rows) {
-        const seen = Date.parse(row.last_seen_at)
-        if (Number.isNaN(seen)) continue
-        const idle = Math.floor((now - seen) / 86400000)
-        for (const bucket of buckets) {
-            if (idle >= bucket.days) {
-                bucket.users.push({ uuid: row.uuid, nickname: row.nickname, days: idle })
-            }
-        }
-    }
-    return { status: 200, payload: { ok: true, buckets: buckets.map((b) => ({ days: b.days, count: b.users.length, users: b.users.sort((a, b) => b.days - a.days) })) } }
+    return { status: 200, payload: { ok: true, ...computeInactivity(db) } }
 }
+
 async function adminAudit(ctx) {
     const { db, url } = ctx
     const limit = Math.min(Number(url.searchParams.get('limit') || 100), 500)

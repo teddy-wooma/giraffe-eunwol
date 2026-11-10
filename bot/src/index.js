@@ -297,32 +297,54 @@ async function sendInactivityReport() {
         const res = await backend.request('GET', '/v1/admin/inactivity')
         if (res.status !== 200 || res.body == null) return
 
-        const embed = new EmbedBuilder()
-            .setTitle('장기 미접 현황')
-            .setColor(0x5b8def)
-            .setTimestamp(new Date())
-
-        for (const bucket of res.body.buckets) {
-            embed.addFields({ name: `${bucket.days}일 이상`, value: `${bucket.count}명`, inline: true })
+        const data = res.body
+        const users = Array.isArray(data.users) ? data.users : []
+        if (users.length === 0) {
+            console.log('[bot] 미접 인원 없음')
+            store.setMeta(db, 'last_report', kstDayKey())
+            return
         }
 
-        const longest = res.body.buckets[res.body.buckets.length - 1]
-        if (longest && longest.users.length > 0) {
-            const names = longest.users.slice(0, 15).map((u) => `${u.nickname} (${u.days}일)`).join('\n')
-            embed.addFields({ name: `${longest.days}일 이상 명단`, value: names.slice(0, 1000) })
-        }
+        const embeds = users.slice(0, 40).map((user) => {
+            const color = user.remaining <= 0 ? 0xe05252
+                : user.remaining <= 3 ? 0xe05252
+                    : user.remaining <= 7 ? 0xe0a852
+                        : 0x4caf76
+
+            return new EmbedBuilder()
+                .setTitle(user.nickname)
+                .setColor(color)
+                .setThumbnail(`https://mc-heads.net/avatar/${user.uuid}/128`)
+                .addFields(
+                    { name: '닉네임 / UUID', value: `${user.nickname}\n${user.uuid}`, inline: false },
+                    { name: '마지막 접속', value: kst(user.last_seen_at), inline: true },
+                    { name: '미접', value: `${user.days}일`, inline: true },
+                    { name: '추방까지', value: user.remaining > 0 ? `${user.remaining}일 남음` : '추방 기준 도달', inline: true },
+                    { name: '숙련도', value: user.skill ? `${user.skill.job} Lv.${user.skill.level}` : '수집 준비 중', inline: true }
+                )
+                .setFooter({ text: `추방 기준 ${data.exileDays || 14}일` })
+        })
 
         const channel = await client.channels.fetch(config.reportChannelId)
-        if (channel.type === ChannelType.GuildForum) {
-            await channel.threads.create({
-                name: `[미접] ${kstDayKey()} 현황`,
-                message: { embeds: [embed] }
+        const isForum = channel.type === ChannelType.GuildForum
+        const title = `[미접] ${kstDayKey()} · ${users.length}명`
+
+        let target = channel
+        if (isForum) {
+            target = await channel.threads.create({
+                name: title,
+                message: { embeds: embeds.slice(0, 10) }
             })
         } else {
-            await channel.send({ embeds: [embed] })
+            await channel.send({ embeds: embeds.slice(0, 10) })
         }
+
+        for (let i = 10; i < embeds.length; i += 10) {
+            await target.send({ embeds: embeds.slice(i, i + 10) })
+        }
+
         store.setMeta(db, 'last_report', kstDayKey())
-        console.log('[bot] 미접 리포트 전송')
+        console.log(`[bot] 미접 리포트 전송 (${users.length}명)`)
     } catch (err) {
         console.error('[bot] 미접 리포트 실패:', err.message)
     }

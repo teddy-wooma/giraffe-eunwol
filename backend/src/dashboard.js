@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const jwt = require('./jwt')
+const { computeInactivity } = require('./inactivity')
 
 const DASHBOARD_DIR = path.join(__dirname, '..', '..', 'dashboard')
 const COOKIE_NAME = 'eunwol_dash'
@@ -340,31 +341,9 @@ function createDashboard({ db, config }) {
     }
 
     function apiInactivity() {
-        const now = Date.now()
-        const rows = db.prepare(`
-            SELECT uuid, nickname, status, last_seen_at FROM users
-            WHERE status != 'banned' AND last_seen_at IS NOT NULL
-        `).all()
-        const thresholds = [3, 5, 7, 10, 14]
-        const buckets = thresholds.map((days) => ({ days, users: [] }))
-
-        for (const row of rows) {
-            const seen = Date.parse(row.last_seen_at)
-            if (Number.isNaN(seen)) continue
-            const idle = Math.floor((now - seen) / 86400000)
-            for (const bucket of buckets) {
-                if (idle >= bucket.days) {
-                    bucket.users.push({ uuid: row.uuid, nickname: row.nickname, days: idle })
-                }
-            }
-        }
-
-        return buckets.map((bucket) => ({
-            days: bucket.days,
-            count: bucket.users.length,
-            users: bucket.users.sort((a, b) => b.days - a.days)
-        }))
+        return computeInactivity(db)
     }
+
     function apiAudit(limit) {
         return db.prepare('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?').all(limit)
     }
