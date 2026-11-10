@@ -11,6 +11,11 @@ function open(dbPath) {
     const db = new DatabaseSync(dbPath)
     db.exec('PRAGMA journal_mode = WAL')
     db.exec(`
+        CREATE TABLE IF NOT EXISTS meta (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS discord_threads (
             request_id TEXT PRIMARY KEY,
             thread_id  TEXT NOT NULL,
@@ -48,4 +53,13 @@ function setStatus(db, requestId, status) {
     db.prepare('UPDATE discord_threads SET status = ? WHERE request_id = ?').run(status, requestId)
 }
 
-module.exports = { open, get, getByThread, save, setStatus }
+function getMeta(db, key) {
+    const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key)
+    return row ? row.value : null
+}
+
+function setMeta(db, key, value) {
+    db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, String(value))
+}
+
+module.exports = { open, get, getByThread, save, setStatus, getMeta, setMeta }

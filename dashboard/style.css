@@ -240,3 +240,10 @@ tr.clickable:hover { background: rgba(122, 162, 247, 0.07); }
 /* 미접 일수 색상 */
 span.warn { color: var(--amber); }
 span.danger { color: var(--red); }
+
+.bucket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.bucket { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.bucket h3 { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.bucket .count { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+.bucket .names { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.bucket .names span { display: inline-block; margin-right: 6px; }

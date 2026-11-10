@@ -28,7 +28,9 @@ const config = {
     backendUrl: process.env.BACKEND_URL || 'http://127.0.0.1:8787',
     adminKey: process.env.ADMIN_API_KEY || '',
     pollMs: Number(process.env.POLL_INTERVAL_MS || 30000),
-    dbPath: process.env.BOT_DB_PATH || './data/bot.sqlite'
+    dbPath: process.env.BOT_DB_PATH || './data/bot.sqlite',
+    reportChannelId: process.env.REPORT_CHANNEL_ID || '',
+    reportHourKst: Number(process.env.REPORT_HOUR_KST || 9)
 }
 
 if (!config.token || !config.forumChannelId || !config.adminKey) {
@@ -289,6 +291,56 @@ async function syncDashboardDecisions() {
     }
 }
 
+async function sendInactivityReport() {
+    if (!config.reportChannelId) return
+    try {
+        const res = await backend.request('GET', '/v1/admin/inactivity')
+        if (res.status !== 200 || res.body == null) return
+
+        const embed = new EmbedBuilder()
+            .setTitle('장기 미접 현황')
+            .setColor(0x5b8def)
+            .setTimestamp(new Date())
+
+        for (const bucket of res.body.buckets) {
+            embed.addFields({ name: `${bucket.days}일 이상`, value: `${bucket.count}명`, inline: true })
+        }
+
+        const longest = res.body.buckets[res.body.buckets.length - 1]
+        if (longest && longest.users.length > 0) {
+            const names = longest.users.slice(0, 15).map((u) => `${u.nickname} (${u.days}일)`).join('\n')
+            embed.addFields({ name: `${longest.days}일 이상 명단`, value: names.slice(0, 1000) })
+        }
+
+        const channel = await client.channels.fetch(config.reportChannelId)
+        await channel.send({ embeds: [embed] })
+        store.setMeta(db, 'last_report', kstDayKey())
+        console.log('[bot] 미접 리포트 전송')
+    } catch (err) {
+        console.error('[bot] 미접 리포트 실패:', err.message)
+    }
+}
+
+function kstDayKey() {
+    return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+function kstHourMinute() {
+    const d = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    return { hour: d.getUTCHours(), minute: d.getUTCMinutes() }
+}
+
+function scheduleInactivityReport() {
+    setInterval(async () => {
+        if (!config.reportChannelId) return
+        const { hour, minute } = kstHourMinute()
+        const key = kstDayKey()
+        if (hour === config.reportHourKst && minute < 10 && store.getMeta(db, 'last_report') !== key) {
+            await sendInactivityReport()
+        }
+    }, 10 * 60 * 1000)
+}
+
 // -----------------------------------------------------------------------------
 // 이벤트
 // -----------------------------------------------------------------------------
@@ -319,6 +371,8 @@ client.once(Events.ClientReady, async (readyClient) => {
 
     await syncDashboardDecisions()
     setInterval(syncDashboardDecisions, 15000)
+
+    scheduleInactivityReport()
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {

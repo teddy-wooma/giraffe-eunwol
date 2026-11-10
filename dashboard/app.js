@@ -193,6 +193,23 @@ async function loadUsers(q = '') {
         </tr>`).join('')
 }
 
+async function loadInactivity() {
+    const d = await api('/api/inactivity')
+    const body = $('inactivityBody')
+    if (!d.buckets || !d.buckets.length) {
+        body.innerHTML = '<p class="muted">데이터가 없습니다.</p>'
+        return
+    }
+    body.innerHTML = d.buckets.map((b) => `
+        <div class="bucket">
+            <h3>${b.days}일 이상 미접</h3>
+            <div class="count">${b.count}명</div>
+            <div class="names">${b.users.length
+        ? b.users.slice(0, 20).map((u) => `<span>${esc(u.nickname)} (${u.days}일)</span>`).join('')
+        : '<span>없음</span>'}</div>
+        </div>`).join('')
+}
+
 async function loadAudit() {
     const d = await api('/api/audit?limit=200')
     const body = $('auditBody')
@@ -359,6 +376,7 @@ function switchTab(tab) {
     if (tab === 'online') loadOnline().catch(() => {})
     if (tab === 'pending') loadPending().catch(() => {})
     if (tab === 'banned') loadBanned().catch(() => {})
+    if (tab === 'inactivity') loadInactivity().catch(() => {})
     if (tab === 'users') loadUsers($('userSearch').value).catch(() => {})
     if (tab === 'audit') loadAudit().catch(() => {})
 }
@@ -477,6 +495,7 @@ $('logoutBtn').addEventListener('click', async () => {
 })
 
 $('auditRefresh').addEventListener('click', () => loadAudit().catch(() => {}))
+$('inactivityRefresh').addEventListener('click', () => loadInactivity().catch(() => {}))
 
 let searchTimer = null
 $('userSearch').addEventListener('input', (event) => {
