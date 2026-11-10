@@ -76,6 +76,17 @@ else
     echo "    기존 .env 유지: $ENV_FILE"
 fi
 
+echo "==> swap (메모리 2GB 미만이면 2GB 스왑)"
+MEM_MB="$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)"
+if [ "$MEM_MB" -lt 2048 ] && [ ! -f /swapfile ]; then
+    fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null
+    swapon /swapfile
+    grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    echo "    2GB 스왑 생성 완료"
+fi
+
 echo "==> systemd"
 install -m 644 "$APP_DIR/backend/systemd/eunwol-backend.service" /etc/systemd/system/eunwol-backend.service
 systemctl daemon-reload
