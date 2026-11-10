@@ -192,6 +192,7 @@ CREATE TABLE IF NOT EXISTS admin_ip_map (
     ip         TEXT PRIMARY KEY,
     discord_id TEXT,
     name       TEXT,
+    manual     INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL
 );
 

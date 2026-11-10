@@ -120,7 +120,9 @@ function createDashboard({ db, config }) {
         if (!ip || !me || !me.sub) return
         db.prepare(
             `INSERT INTO admin_ip_map (ip, discord_id, name, updated_at) VALUES (?, ?, ?, ?)
-             ON CONFLICT(ip) DO UPDATE SET discord_id = excluded.discord_id, name = excluded.name, updated_at = excluded.updated_at`
+             ON CONFLICT(ip) DO UPDATE SET discord_id = excluded.discord_id,
+                 name = CASE WHEN admin_ip_map.manual = 1 THEN admin_ip_map.name ELSE excluded.name END,
+                 updated_at = excluded.updated_at`
         ).run(ip, me.sub, me.name || me.sub, new Date().toISOString())
     }
 
