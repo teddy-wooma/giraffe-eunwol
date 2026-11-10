@@ -26,3 +26,7 @@ bot/node_modules/
 bot/.env
 bot/data/
 bot/*.sqlite
+# mod build
+mod/build/
+mod/.gradle/
+mod/run/

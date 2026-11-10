@@ -96,7 +96,7 @@
                             "type": "VersionManifest",
                             "artifact": {
                                 "size": 2778,
-                                "MD5": "a4d814c390bec3a9e722147605d175b5",
+                                "MD5": "b2e82ece2780e90a3e928462eb9058c2",
                                 "url": "https://meta.fabricmc.net/v2/versions/loader/26.2/0.20.1/profile/json"
                             }
                         }
@@ -210,6 +210,16 @@
                         "size": 21493,
                         "MD5": "c87f290800d5210df32e086463789319",
                         "url": "https://raw.githubusercontent.com/teddy-wooma/giraffe-eunwol/main/dist-mods/dawn-standalone.jar"
+                    }
+                },
+                {
+                    "id": "generated:eunwol-telemetry:0.1.0",
+                    "name": "Eunwol Telemetry 0.1.0",
+                    "type": "FabricMod",
+                    "artifact": {
+                        "size": 9252,
+                        "MD5": "d3f7fa2241811089e30fe81d709e76a1",
+                        "url": "https://raw.githubusercontent.com/teddy-wooma/giraffe-eunwol/main/dist-mods/eunwol-telemetry-0.1.0.jar"
                     }
                 },
                 {

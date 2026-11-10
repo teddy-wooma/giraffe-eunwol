@@ -20,6 +20,7 @@ const state = {
     baseUrl: (process.env.EUNWOL_API_URL || DEFAULT_BASE_URL).replace(/\/+$/, ''),
     accessToken: null,
     sessionToken: null,
+    modToken: null,
     pendingToken: null,
     requestId: null,
     heartbeatTimer: null
@@ -107,6 +108,7 @@ async function startSession(accessToken) {
 
     if (result.http === 200 && body.status === 'approved' && body.sessionToken != null) {
         state.sessionToken = body.sessionToken
+        state.modToken = body.modToken || null
         state.pendingToken = null
         state.requestId = null
         startHeartbeat()
@@ -184,6 +186,7 @@ async function endSession() {
         // 종료 시점 오류는 무시
     }
     state.sessionToken = null
+    state.modToken = null
     return { ok: true }
 }
 
@@ -209,6 +212,11 @@ function register() {
             return { status: 'pending', requestId: state.requestId }
         }
     })
+
+    ipcMain.handle('backend:telemetry', async () => ({
+        backendUrl: state.baseUrl,
+        modToken: state.modToken
+    }))
 
     ipcMain.handle('backend:sessionEnd', async () => {
         return endSession()

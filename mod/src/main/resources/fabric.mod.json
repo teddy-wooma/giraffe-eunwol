@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "eunwol-telemetry",
+  "version": "${version}",
+  "name": "Eunwol Telemetry",
+  "description": "은월마을 활동 데이터 수집 (런처 전용)",
+  "authors": [
+    "Eunwol"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "kr.eunwol.telemetry.EunwolTelemetryClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

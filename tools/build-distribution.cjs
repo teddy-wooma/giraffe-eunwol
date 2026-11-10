@@ -134,6 +134,11 @@ const CONFIG = {
             file: 'dist-mods/dawn-standalone.jar'
         },
         {
+            id: 'generated:eunwol-telemetry:0.1.0',
+            name: 'Eunwol Telemetry 0.1.0',
+            file: 'dist-mods/eunwol-telemetry-0.1.0.jar'
+        },
+        {
             id: 'generated:bobby:5.2.15+mc26.2',
             name: 'Bobby 5.2.15',
             url: 'https://cdn.modrinth.com/data/M08ruV16/versions/KLiFVFju/bobby-5.2.15%2Bmc26.2.jar'

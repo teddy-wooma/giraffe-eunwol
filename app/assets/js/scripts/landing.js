@@ -413,6 +413,29 @@ const GAME_JOINED_REGEX = /\[.+\]: Sound engine started/
 const GAME_LAUNCH_REGEX = /^\[.+\]: (?:MinecraftForge .+ Initialized|ModLauncher .+ starting: .+|Loading Minecraft .+ with Fabric Loader .+)$/
 const MIN_LINGER = 5000
 
+
+async function writeTelemetryConfig() {
+    try {
+        const fs = require('fs-extra')
+        const path = require('path')
+        const electronIpc = require('electron').ipcRenderer
+        const info = await electronIpc.invoke('backend:telemetry')
+        if (info == null || !info.modToken) {
+            return
+        }
+        const configDir = path.join(ConfigManager.getInstanceDirectory(), 'config')
+        await fs.ensureDir(configDir)
+        await fs.writeJson(path.join(configDir, 'eunwol-telemetry.json'), {
+            backendUrl: info.backendUrl,
+            token: info.modToken,
+            enabled: true
+        }, { spaces: 2 })
+        loggerLanding.info('Telemetry config written.')
+    } catch (err) {
+        loggerLanding.warn('Telemetry config write failed:', err.message)
+    }
+}
+
 async function dlAsync(login = true) {
     logLaunchSection('게임 실행 준비 시작')
 
@@ -450,6 +473,8 @@ async function dlAsync(login = true) {
             return
         }
     }
+
+    await writeTelemetryConfig()
 
     setLaunchDetails(Lang.queryJS('landing.dlAsync.pleaseWait'))
     toggleLaunchArea(true)
