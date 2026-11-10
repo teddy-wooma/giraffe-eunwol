@@ -249,6 +249,7 @@ function createDashboard({ db, config }) {
     }
 
     function apiOnline() {
+        const aliveSince = new Date(Date.now() - 3 * 60 * 1000).toISOString()
         return db.prepare(`
             SELECT u.uuid, u.nickname, u.status,
                    g.server_address, g.dimension, g.play_seconds, g.afk_seconds, g.joined_at,
@@ -258,8 +259,14 @@ function createDashboard({ db, config }) {
             JOIN users u ON u.uuid = g.uuid
             LEFT JOIN launcher_sessions l ON l.uuid = g.uuid AND l.ended_at IS NULL
             WHERE g.left_at IS NULL
+              AND g.updated_at > ?
+              AND g.id = (
+                  SELECT g2.id FROM game_sessions g2
+                  WHERE g2.uuid = g.uuid AND g2.left_at IS NULL
+                  ORDER BY g2.joined_at DESC LIMIT 1
+              )
             ORDER BY g.joined_at DESC
-        `).all()
+        `).all(aliveSince)
     }
 
     function apiPending() {
@@ -300,9 +307,10 @@ function createDashboard({ db, config }) {
         const user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(uuid)
         if (user == null) return null
 
+        const aliveSince = new Date(Date.now() - 3 * 60 * 1000).toISOString()
         const current = db.prepare(
-            'SELECT * FROM game_sessions WHERE uuid = ? AND left_at IS NULL ORDER BY joined_at DESC LIMIT 1'
-        ).get(uuid) || null
+            'SELECT * FROM game_sessions WHERE uuid = ? AND left_at IS NULL AND updated_at > ? ORDER BY joined_at DESC LIMIT 1'
+        ).get(uuid, aliveSince) || null
 
         const sessions = db.prepare(
             'SELECT * FROM game_sessions WHERE uuid = ? ORDER BY joined_at DESC LIMIT 10'

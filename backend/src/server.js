@@ -364,6 +364,10 @@ async function modSessionStart(ctx) {
         throw new ApiError(403, 'BANNED', '사용할 수 없는 계정입니다.')
     }
 
+    // 이전에 열린 세션이 남아 있으면 종료 처리 (중복 방지)
+    db.prepare('UPDATE game_sessions SET left_at = ?, updated_at = ? WHERE uuid = ? AND left_at IS NULL')
+        .run(nowIso(), nowIso(), user.uuid)
+
     const sessionId = newId()
     db.prepare(
         `INSERT INTO game_sessions
