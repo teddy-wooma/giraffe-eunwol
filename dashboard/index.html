@@ -42,7 +42,10 @@
     <section class="panel active" id="panel-online">
         <div class="panel-head">
             <h2>현재 접속자</h2>
-            <span class="muted" id="onlineUpdated"></span>
+            <div class="panel-actions">
+                <span class="muted" id="onlineUpdated"></span>
+                <button id="onlineRefresh" class="ghost">새로고침</button>
+            </div>
         </div>
         <table>
             <thead><tr><th>닉네임</th><th>서버</th><th>차원</th><th>플레이</th><th>AFK</th><th>접속 시각</th></tr></thead>
@@ -95,8 +98,12 @@
             <div>
                 <h2 id="dName">-</h2>
                 <p id="dMeta" class="muted">-</p>
+                <p id="dUpdated" class="muted"></p>
             </div>
-            <button id="dClose" class="ghost">닫기</button>
+            <div class="drawer-actions">
+                <button id="dRefresh" class="ghost">새로고침</button>
+                <button id="dClose" class="ghost">닫기</button>
+            </div>
         </header>
         <div class="drawer-body" id="dBody">
             <p class="muted">불러오는 중…</p>

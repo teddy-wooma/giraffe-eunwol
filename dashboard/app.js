@@ -208,6 +208,10 @@ async function loadDetail() {
     const u = d.user
     $('dName').textContent = u.nickname
     $('dMeta').textContent = `${u.uuid} · ${u.status === 'approved' ? '승인' : u.status === 'banned' ? '밴' : '대기'} · 총 플레이 ${fmtDuration(d.totalPlay)}`
+    $('dUpdated').textContent = '갱신 ' + new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(new Date())
 
     const parts = []
 
@@ -383,6 +387,24 @@ document.addEventListener('click', (event) => {
 })
 
 $('dClose').addEventListener('click', closeDrawer)
+$('dRefresh').addEventListener('click', async () => {
+    if (drawerUuid == null) return
+    try {
+        await loadDetail()
+        toast('실시간 데이터를 갱신했습니다.')
+    } catch (err) {
+        toast(`갱신 실패: ${err.message}`)
+    }
+})
+$('onlineRefresh').addEventListener('click', async () => {
+    try {
+        await loadOnline()
+        await loadOverview()
+        toast('접속자 목록을 갱신했습니다.')
+    } catch (err) {
+        toast(`갱신 실패: ${err.message}`)
+    }
+})
 $('drawer').addEventListener('click', (event) => {
     if (event.target.id === 'drawer') closeDrawer()
 })
