@@ -223,6 +223,16 @@
                     }
                 },
                 {
+                    "id": "generated:eunwol-minimap-icons:1.0.0+26.2",
+                    "name": "Eunwol Core - Minimap Icons 1.0.0",
+                    "type": "FabricMod",
+                    "artifact": {
+                        "size": 5643,
+                        "MD5": "6241c22dd7c4d975cd3a73e5208bdf66",
+                        "url": "https://raw.githubusercontent.com/teddy-wooma/giraffe-eunwol/main/dist-mods/eunwol-minimap-icons-1.0.0+26.2.jar"
+                    }
+                },
+                {
                     "id": "generated:bobby:5.2.15+mc26.2",
                     "name": "Bobby 5.2.15",
                     "type": "FabricMod",

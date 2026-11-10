@@ -139,6 +139,11 @@ const CONFIG = {
             file: 'dist-mods/eunwol-telemetry.jar'
         },
         {
+            id: 'generated:eunwol-minimap-icons:1.0.0+26.2',
+            name: 'Eunwol Core - Minimap Icons 1.0.0',
+            file: 'dist-mods/eunwol-minimap-icons-1.0.0+26.2.jar'
+        },
+        {
             id: 'generated:bobby:5.2.15+mc26.2',
             name: 'Bobby 5.2.15',
             url: 'https://cdn.modrinth.com/data/M08ruV16/versions/KLiFVFju/bobby-5.2.15%2Bmc26.2.jar'
