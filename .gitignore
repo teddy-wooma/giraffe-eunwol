@@ -17,3 +17,7 @@
 /.idea/
 Thumbs.db
 desktop.ini
+# backend
+backend/data/
+backend/.env
+backend/*.sqlite
