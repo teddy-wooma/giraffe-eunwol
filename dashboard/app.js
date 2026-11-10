@@ -106,6 +106,31 @@ function statusChip(status) {
 // 데이터 로드
 // ---------------------------------------------------------------------
 
+function avatarUrl(id, hash) {
+    if (hash) return `https://cdn.discordapp.com/avatars/${id}/${hash}.png?size=32`
+    return `https://cdn.discordapp.com/embed/avatars/${Number(id) % 5}.png`
+}
+
+function renderAdmins(list) {
+    const el = $('adminPresence')
+    if (!el) return
+    if (!list || list.length === 0) {
+        el.innerHTML = ''
+        return
+    }
+    el.innerHTML = list.map((a) => `<img class="presence-avatar" src="${avatarUrl(a.discord_id, a.avatar)}" title="${esc(a.name)}" alt="">`).join('')
+        + `<span class="presence-count">관리자 ${list.length}명</span>`
+}
+
+async function sendPresence() {
+    try {
+        const d = await api('/api/presence', { method: 'POST', body: JSON.stringify({}) })
+        renderAdmins(d.online)
+    } catch (err) {
+        console.error('presence 실패', err.message)
+    }
+}
+
 async function loadMe() {
     const data = await api('/api/me')
     state.me = data.user
@@ -529,6 +554,8 @@ $('userSearch').addEventListener('input', (event) => {
 ;(async () => {
     try {
         await loadMe()
+        await sendPresence()
+        setInterval(sendPresence, 30000)
         await loadOverview()
         switchTab('online')
     } catch (err) {

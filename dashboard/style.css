@@ -254,3 +254,7 @@ span.danger { color: var(--red); }
 .exile-red { color: #e74c3c; }
 
 th, td { text-align: center; }
+
+.admin-presence { display: flex; align-items: center; gap: 6px; margin-right: 14px; font-size: 12px; color: var(--muted); }
+.admin-presence .presence-avatar { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2); }
+.admin-presence .presence-count { margin-left: 4px; }

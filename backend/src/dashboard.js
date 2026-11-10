@@ -206,7 +206,7 @@ function createDashboard({ db, config }) {
 
             const displayName = user.global_name || user.username
             const token = jwt.sign(
-                { sub: user.id, name: `${displayName} (${user.username})`, typ: 'dashboard' },
+                { sub: user.id, name: `${displayName} (${user.username})`, avatar: user.avatar || null, typ: 'dashboard' },
                 secret,
                 SESSION_TTL
             )
@@ -233,6 +233,22 @@ function createDashboard({ db, config }) {
     // ------------------------------------------------------------------
     // API
     // ------------------------------------------------------------------
+
+    function touchPresence(me, ip) {
+        if (!me || !me.sub) return
+        db.prepare(
+            `INSERT INTO dashboard_presence (discord_id, name, avatar, last_seen_at, ip)
+             VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(discord_id) DO UPDATE SET name = excluded.name, avatar = excluded.avatar, last_seen_at = excluded.last_seen_at, ip = excluded.ip`
+        ).run(me.sub, me.name || me.sub, me.avatar || null, new Date().toISOString(), ip || null)
+    }
+
+    function onlineAdmins() {
+        const cutoff = new Date(Date.now() - 90 * 1000).toISOString()
+        return db.prepare(
+            'SELECT discord_id, name, avatar, last_seen_at FROM dashboard_presence WHERE last_seen_at > ? ORDER BY last_seen_at DESC'
+        ).all(cutoff)
+    }
 
     function apiOverview() {
         const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
@@ -385,7 +401,13 @@ function createDashboard({ db, config }) {
         }
 
         try {
+            if (p === '/api/presence' && req.method === 'POST') {
+                touchPresence(me, ip)
+                sendJson(res, 200, { ok: true, online: onlineAdmins() })
+                return true
+            }
             if (p === '/api/me' && req.method === 'GET') {
+                touchPresence(me, ip)
                 sendJson(res, 200, { ok: true, user: { name: me.name } })
                 return true
             }

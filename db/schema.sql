@@ -186,6 +186,19 @@ CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target_uuid, created_at);
 
 -- -----------------------------------------------------------------------------
+-- 대시보드 접속 현황
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS dashboard_presence (
+    discord_id   TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    avatar       TEXT,
+    last_seen_at TEXT NOT NULL,
+    ip           TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_presence_seen ON dashboard_presence(last_seen_at);
+
+-- -----------------------------------------------------------------------------
 -- 마이그레이션 버전
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS schema_migrations (
