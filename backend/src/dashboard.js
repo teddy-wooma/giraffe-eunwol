@@ -249,7 +249,7 @@ function createDashboard({ db, config }) {
     }
 
     function apiOnline() {
-        const aliveSince = new Date(Date.now() - 3 * 60 * 1000).toISOString()
+        const aliveSince = new Date(Date.now() - 90 * 1000).toISOString()
         return db.prepare(`
             SELECT u.uuid, u.nickname, u.status,
                    g.server_address, g.dimension, g.play_seconds, g.afk_seconds, g.joined_at,
@@ -306,7 +306,7 @@ function createDashboard({ db, config }) {
         const user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(uuid)
         if (user == null) return null
 
-        const aliveSince = new Date(Date.now() - 3 * 60 * 1000).toISOString()
+        const aliveSince = new Date(Date.now() - 90 * 1000).toISOString()
         const current = db.prepare(
             'SELECT * FROM game_sessions WHERE uuid = ? AND left_at IS NULL AND updated_at > ? ORDER BY joined_at DESC LIMIT 1'
         ).get(uuid, aliveSince) || null

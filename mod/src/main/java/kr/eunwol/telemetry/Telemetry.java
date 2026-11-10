@@ -32,7 +32,7 @@ public final class Telemetry {
     private static final Logger LOG = LoggerFactory.getLogger("eunwol-telemetry");
     private static final Gson GSON = new Gson();
     private static final String CONFIG_FILE = "eunwol-telemetry.json";
-    private static final long HEARTBEAT_INTERVAL_MS = 60_000L;
+    private static final long HEARTBEAT_INTERVAL_MS = 5_000L;
 
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))

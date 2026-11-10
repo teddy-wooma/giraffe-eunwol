@@ -213,13 +213,13 @@
                     }
                 },
                 {
-                    "id": "generated:eunwol-telemetry:0.1.0",
-                    "name": "Eunwol Telemetry 0.1.0",
+                    "id": "generated:eunwol-telemetry:0.2.0",
+                    "name": "Eunwol Telemetry 0.2.0",
                     "type": "FabricMod",
                     "artifact": {
                         "size": 9252,
-                        "MD5": "d3f7fa2241811089e30fe81d709e76a1",
-                        "url": "https://raw.githubusercontent.com/teddy-wooma/giraffe-eunwol/main/dist-mods/eunwol-telemetry-0.1.0.jar"
+                        "MD5": "2d35d1ffd9e600895a8d4d5734e28087",
+                        "url": "https://raw.githubusercontent.com/teddy-wooma/giraffe-eunwol/main/dist-mods/eunwol-telemetry.jar"
                     }
                 },
                 {

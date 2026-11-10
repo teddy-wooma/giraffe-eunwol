@@ -694,7 +694,7 @@ function buildServer({ db, config }) {
                 return
             }
 
-            rateLimit(`ip:${ip || 'unknown'}`)
+            rateLimit(`ip:${ip || 'unknown'}`, 600)
 
             let matched = null
             for (const [method, pattern, handler, admin] of routes) {
@@ -743,7 +743,10 @@ function buildServer({ db, config }) {
                 }, requestId)
             }
         } finally {
-            console.log(`${req.method} ${url.pathname} ${res.statusCode} ${Date.now() - startedAt}ms`)
+            const quiet = url.pathname === '/v1/mod/heartbeat' || url.pathname === '/v1/launcher/heartbeat'
+            if (!quiet) {
+                console.log(`${req.method} ${url.pathname} ${res.statusCode} ${Date.now() - startedAt}ms`)
+            }
         }
     })
 }
