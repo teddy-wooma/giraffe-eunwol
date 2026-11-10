@@ -16,10 +16,17 @@ function open(dbPath) {
             thread_id  TEXT NOT NULL,
             nickname   TEXT,
             uuid       TEXT,
+            requested_at TEXT,
             status     TEXT NOT NULL DEFAULT 'pending',
             created_at TEXT NOT NULL
         );
     `)
+    // 기존 DB 마이그레이션
+    try {
+        db.exec('ALTER TABLE discord_threads ADD COLUMN requested_at TEXT')
+    } catch (_) {
+        // 이미 존재
+    }
     return db
 }
 
@@ -29,8 +36,8 @@ function get(db, requestId) {
 
 function save(db, request, threadId) {
     db.prepare(
-        'INSERT OR REPLACE INTO discord_threads (request_id, thread_id, nickname, uuid, status, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(request.id, threadId, request.nickname || null, request.uuid || null, 'pending', new Date().toISOString())
+        'INSERT OR REPLACE INTO discord_threads (request_id, thread_id, nickname, uuid, requested_at, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(request.id, threadId, request.nickname || null, request.uuid || null, request.requested_at || null, 'pending', new Date().toISOString())
 }
 
 function getByThread(db, threadId) {

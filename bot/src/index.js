@@ -9,7 +9,8 @@ const {
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    MessageFlags
 } = require('discord.js')
 const { Backend } = require('./backend')
 const store = require('./db')
@@ -65,6 +66,27 @@ let polling = false
 // 유틸
 // -----------------------------------------------------------------------------
 
+function kst(iso) {
+    if (!iso) return '-'
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return String(iso)
+    return new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+    }).format(d)
+}
+
+function durationText(fromIso, toIso) {
+    const from = Date.parse(fromIso)
+    const to = Date.parse(toIso)
+    if (Number.isNaN(from) || Number.isNaN(to) || to < from) return null
+    const minutes = Math.round((to - from) / 60000)
+    if (minutes < 60) return `${minutes}분`
+    const hours = Math.floor(minutes / 60)
+    return `${hours}시간 ${minutes % 60}분`
+}
+
 function tagId(name) {
     if (forumChannel == null) return null
     const tag = forumChannel.availableTags.find((t) => t.name === name)
@@ -97,6 +119,10 @@ function decisionEmbed(record, decision, actor, note) {
     const embed = new EmbedBuilder()
         .setTitle(`요청 ${record.request_id} · ${label}`)
         .setColor(color)
+        .setDescription(
+            `신청 ${kst(record.requested_at)} → 처리 ${kst(new Date().toISOString())}` +
+            (durationText(record.requested_at, new Date().toISOString()) ? ` (소요 ${durationText(record.requested_at, new Date().toISOString())})` : '')
+        )
         .addFields(
             { name: '닉네임', value: record.nickname || '-', inline: true },
             { name: 'UUID', value: record.uuid || '-', inline: false },
@@ -121,7 +147,7 @@ async function createThreadForRequest(request) {
             { name: '닉네임', value: request.nickname || '-', inline: true },
             { name: '요청 ID', value: request.id, inline: true },
             { name: 'UUID', value: request.uuid || '-', inline: false },
-            { name: '신청 시각', value: request.requested_at || '-', inline: false }
+            { name: '신청 시각', value: kst(request.requested_at), inline: false }
         )
         .setFooter({ text: '승인 시 다음 실행부터 정상 이용됩니다.' })
         .setTimestamp(new Date())
@@ -250,12 +276,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.customId.startsWith('dec|')) return
 
     if (!isAdmin(interaction.member)) {
-        await interaction.reply({ content: '처리 권한이 없습니다.', ephemeral: true })
+        await interaction.reply({ content: '처리 권한이 없습니다.', flags: MessageFlags.Ephemeral })
         return
     }
 
     const [, requestId, decision] = interaction.customId.split('|')
-    await interaction.deferReply({ ephemeral: true })
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
     try {
         const result = await applyDecision(requestId, decision, `${interaction.user.tag} (${interaction.user.id})`, null)
