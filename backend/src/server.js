@@ -285,7 +285,7 @@ async function launcherSessionStart(ctx) {
     )
 
     const tokens = issueTokens(config, user, sessionId)
-    audit(db, user.uuid, 'launcher_session_start', user.uuid, {
+    audit(db, user.nickname || user.uuid, 'launcher_session_start', user.uuid, {
         sessionId,
         launcherVersion: body.launcherVersion || null,
         ip: maskIp(ip)
@@ -354,7 +354,8 @@ async function launcherSessionEnd(ctx) {
     const payload = verifyOrThrow(getBearer(ctx.req), config.jwtSecret, 'launcher')
     db.prepare('UPDATE launcher_sessions SET ended_at = ? WHERE id = ? AND uuid = ?')
         .run(nowIso(), payload.sid, payload.sub)
-    audit(db, payload.sub, 'launcher_session_end', payload.sub, { sessionId: payload.sid })
+    const endedUser = db.prepare('SELECT nickname FROM users WHERE uuid = ?').get(payload.sub)
+    audit(db, (endedUser && endedUser.nickname) || payload.sub, 'launcher_session_end', payload.sub, { sessionId: payload.sid })
     return { status: 200, payload: { ok: true } }
 }
 
