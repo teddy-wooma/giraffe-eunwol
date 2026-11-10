@@ -254,10 +254,9 @@ function createDashboard({ db, config }) {
             SELECT u.uuid, u.nickname, u.status,
                    g.server_address, g.dimension, g.play_seconds, g.afk_seconds, g.joined_at,
                    g.last_x, g.last_y, g.last_z,
-                   l.last_heartbeat_at
+                   (SELECT MAX(l.last_heartbeat_at) FROM launcher_sessions l WHERE l.uuid = g.uuid) AS last_heartbeat_at
             FROM game_sessions g
             JOIN users u ON u.uuid = g.uuid
-            LEFT JOIN launcher_sessions l ON l.uuid = g.uuid AND l.ended_at IS NULL
             WHERE g.left_at IS NULL
               AND g.updated_at > ?
               AND g.id = (

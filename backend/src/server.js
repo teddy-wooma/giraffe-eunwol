@@ -261,6 +261,10 @@ async function launcherSessionStart(ctx) {
         }
     }
 
+    // 이전에 열린 런처 세션 정리
+    db.prepare('UPDATE launcher_sessions SET ended_at = ? WHERE uuid = ? AND ended_at IS NULL')
+        .run(nowIso(), user.uuid)
+
     const sessionId = newId()
     db.prepare(
         `INSERT INTO launcher_sessions
