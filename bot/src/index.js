@@ -291,6 +291,20 @@ async function syncDashboardDecisions() {
     }
 }
 
+function exileColor(remaining) {
+    if (remaining <= 3) return 0xe74c3c
+    if (remaining <= 6) return 0xe67e22
+    if (remaining <= 9) return 0xf1c40f
+    return 0xffffff
+}
+
+function exileDot(remaining) {
+    if (remaining <= 3) return '🔴'
+    if (remaining <= 6) return '🟠'
+    if (remaining <= 9) return '🟡'
+    return '⚪'
+}
+
 async function sendInactivityReport() {
     if (!config.reportChannelId) return
     try {
@@ -306,20 +320,17 @@ async function sendInactivityReport() {
         }
 
         const embeds = users.slice(0, 40).map((user) => {
-            const color = user.remaining <= 0 ? 0xe05252
-                : user.remaining <= 3 ? 0xe05252
-                    : user.remaining <= 7 ? 0xe0a852
-                        : 0x4caf76
+            const color = exileColor(user.remaining)
 
             return new EmbedBuilder()
                 .setTitle(user.nickname)
                 .setColor(color)
-                .setThumbnail(`https://mc-heads.net/avatar/${user.uuid}/128`)
+                .setThumbnail(`https://mc-heads.net/avatar/${encodeURIComponent(user.nickname)}/128`)
                 .addFields(
                     { name: '닉네임 / UUID', value: `${user.nickname}\n${user.uuid}`, inline: false },
                     { name: '마지막 접속', value: kst(user.last_seen_at), inline: true },
                     { name: '미접', value: `${user.days}일`, inline: true },
-                    { name: '추방까지', value: user.remaining > 0 ? `${user.remaining}일 남음` : '추방 기준 도달', inline: true },
+                    { name: '추방까지', value: user.remaining > 0 ? `${exileDot(user.remaining)} ${user.remaining}일 남음` : '🔴 추방 기준 도달', inline: true },
                     { name: '숙련도', value: user.skill ? `${user.skill.job} Lv.${user.skill.level}` : '수집 준비 중', inline: true }
                 )
                 .setFooter({ text: `추방 기준 ${data.exileDays || 14}일` })
