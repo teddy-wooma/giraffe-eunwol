@@ -244,7 +244,8 @@ function createDashboard({ db, config }) {
     }
 
     function onlineAdmins() {
-        const cutoff = new Date(Date.now() - 90 * 1000).toISOString()
+        db.prepare('DELETE FROM dashboard_presence WHERE last_seen_at < ?').run(new Date(Date.now() - 10 * 60 * 1000).toISOString())
+        const cutoff = new Date(Date.now() - 45 * 1000).toISOString()
         return db.prepare(
             'SELECT discord_id, name, avatar, last_seen_at FROM dashboard_presence WHERE last_seen_at > ? ORDER BY last_seen_at DESC'
         ).all(cutoff)

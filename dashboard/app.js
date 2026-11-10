@@ -108,7 +108,8 @@ function statusChip(status) {
 
 function avatarUrl(id, hash) {
     if (hash) return `https://cdn.discordapp.com/avatars/${id}/${hash}.png?size=32`
-    return `https://cdn.discordapp.com/embed/avatars/${Number(id) % 5}.png`
+    const index = Number(BigInt(id) >> 22n) % 6
+    return `https://cdn.discordapp.com/embed/avatars/${index}.png`
 }
 
 function renderAdmins(list) {
@@ -555,7 +556,7 @@ $('userSearch').addEventListener('input', (event) => {
     try {
         await loadMe()
         await sendPresence()
-        setInterval(sendPresence, 30000)
+        setInterval(sendPresence, 15000)
         await loadOverview()
         switchTab('online')
     } catch (err) {
