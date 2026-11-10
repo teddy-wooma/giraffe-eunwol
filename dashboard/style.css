@@ -258,3 +258,16 @@ th, td { text-align: center; }
 .admin-presence { display: flex; align-items: center; gap: 6px; margin-right: 14px; font-size: 12px; color: var(--muted); }
 .admin-presence .presence-avatar { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2); }
 .admin-presence .presence-count { margin-left: 4px; }
+
+#panel-audit th, #panel-audit td { white-space: nowrap; }
+#panel-audit .audit-actor, #panel-audit .audit-target, #panel-audit .audit-action {
+    max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+}
+#panel-audit .audit-payload {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 520px;
+}

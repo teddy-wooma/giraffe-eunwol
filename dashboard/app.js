@@ -264,11 +264,11 @@ async function loadAudit() {
     }
     body.innerHTML = d.audit.map((row) => `
         <tr>
-            <td>${fmtTime(row.created_at)}</td>
-            <td>${esc(row.actor || 'system')}</td>
-            <td class="mono">${esc(row.action)}</td>
-            <td class="mono">${esc(row.target_uuid || '-')}</td>
-            <td class="mono">${esc(row.payload_json || '')}</td>
+            <td class="audit-time">${fmtTime(row.created_at)}</td>
+            <td class="audit-actor">${esc(row.actor || 'system')}</td>
+            <td class="mono audit-action">${esc(row.action)}</td>
+            <td class="mono audit-target">${esc(row.target_uuid || '-')}</td>
+            <td class="mono audit-payload">${esc(row.payload_json || '')}</td>
         </tr>`).join('')
 }
 
