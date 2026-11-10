@@ -423,7 +423,7 @@ async function writeTelemetryConfig() {
         if (info == null || !info.modToken) {
             return
         }
-        const configDir = path.join(ConfigManager.getInstanceDirectory(), 'config')
+        const configDir = path.join(ConfigManager.getInstanceDirectory(), ConfigManager.getSelectedServer(), 'config')
         await fs.ensureDir(configDir)
         await fs.writeJson(path.join(configDir, 'eunwol-telemetry.json'), {
             backendUrl: info.backendUrl,
