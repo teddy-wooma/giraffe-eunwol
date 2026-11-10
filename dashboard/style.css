@@ -264,11 +264,13 @@ th, td { text-align: center; }
     max-width: 220px; overflow: hidden; text-overflow: ellipsis;
 }
 #panel-audit .audit-payload {
+    display: block;
     white-space: normal;
     overflow: hidden;
     max-height: 2.9em;
     line-height: 1.45;
 }
+#panel-audit .audit-payload-cell { padding-top: 6px; padding-bottom: 6px; }
 
 /* 로그 테이블 고정 폭 */
 #panel-audit table { table-layout: fixed; width: 100%; }

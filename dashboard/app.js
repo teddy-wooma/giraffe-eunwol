@@ -268,7 +268,7 @@ async function loadAudit() {
             <td class="audit-actor">${esc(row.actor || 'system')}</td>
             <td class="mono audit-action">${esc(row.action)}</td>
             <td class="mono audit-target">${esc(row.target_uuid || '-')}</td>
-            <td class="mono audit-payload">${esc(row.payload_json || '')}</td>
+            <td class="mono audit-payload-cell"><div class="audit-payload">${esc(row.payload_json || '')}</div></td>
         </tr>`).join('')
 }
 
