@@ -502,4 +502,4 @@ setInterval(() => {
     loadOverview().catch(() => {})
     if (state.tab === 'online') loadOnline().catch(() => {})
     if (state.tab === 'pending') loadPending().catch(() => {})
-}, 15000)
+}, 5000)
