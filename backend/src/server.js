@@ -5,6 +5,7 @@ const crypto = require('node:crypto')
 const { open, tx } = require('./db')
 const jwt = require('./jwt')
 const { verifyMinecraftToken } = require('./mojang')
+const { createDashboard } = require('./dashboard')
 const {
     nowIso,
     todayCompact,
@@ -37,6 +38,12 @@ function loadConfig(env = process.env) {
         serverAddress: env.SERVER_ADDRESS || 'giraffemc.com',
         serverPort: Number(env.SERVER_PORT || 25565),
         devAllowFakeToken: env.DEV_ALLOW_FAKE_TOKEN === '1',
+        discordClientId: env.DISCORD_CLIENT_ID || '',
+        discordClientSecret: env.DISCORD_CLIENT_SECRET || '',
+        discordRedirectUri: env.DISCORD_REDIRECT_URI || '',
+        discordGuildId: env.DISCORD_GUILD_ID || '',
+        discordAdminRoleId: env.DISCORD_ADMIN_ROLE_ID || '',
+        dashboardSecret: env.DASHBOARD_SECRET || env.JWT_SECRET || 'dev-dashboard-secret',
         ttl: {
             launcher: Number(env.LAUNCHER_TOKEN_TTL || 86400),
             pending: Number(env.PENDING_TOKEN_TTL || 86400),
@@ -653,6 +660,8 @@ const routes = [
 ]
 
 function buildServer({ db, config }) {
+    const dashboard = createDashboard({ db, config })
+
     return http.createServer(async (req, res) => {
         const startedAt = Date.now()
         const requestId = `req_${newId()}`
@@ -662,6 +671,10 @@ function buildServer({ db, config }) {
         try {
             if (url.pathname === '/healthz') {
                 sendJson(res, 200, { ok: true, at: nowIso() }, requestId)
+                return
+            }
+
+            if (await dashboard(req, res, url, ip)) {
                 return
             }
 

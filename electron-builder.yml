@@ -33,6 +33,7 @@ files:
   - '!backend'
   - '!bot'
   - '!db'
+  - '!dashboard'
   - '!.userdata'
   - '!_branding-original'
   - '!_private'

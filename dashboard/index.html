@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>은월 대시보드</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <span class="moon">🌙</span>
+        <div>
+            <h1>은월 대시보드</h1>
+            <p>기린월드 · 은월마을 운영</p>
+        </div>
+    </div>
+    <div class="userbox">
+        <span id="meName">-</span>
+        <button id="logoutBtn" class="ghost">로그아웃</button>
+    </div>
+</header>
+
+<main>
+    <section class="cards">
+        <div class="card"><span class="label">런처 접속</span><strong id="cOnline">-</strong></div>
+        <div class="card"><span class="label">게임 접속</span><strong id="cInGame">-</strong></div>
+        <div class="card"><span class="label">승인 대기</span><strong id="cPending" class="warn">-</strong></div>
+        <div class="card"><span class="label">밴</span><strong id="cBanned" class="danger">-</strong></div>
+        <div class="card"><span class="label">오늘 접속자</span><strong id="cToday">-</strong></div>
+        <div class="card"><span class="label">전체 마을원</span><strong id="cTotal">-</strong></div>
+    </section>
+
+    <nav class="tabs">
+        <button class="tab active" data-tab="online">접속자</button>
+        <button class="tab" data-tab="pending">승인 대기 <span id="pendingBadge" class="badge hidden">0</span></button>
+        <button class="tab" data-tab="banned">밴</button>
+        <button class="tab" data-tab="users">마을원</button>
+        <button class="tab" data-tab="audit">로그</button>
+    </nav>
+
+    <section class="panel active" id="panel-online">
+        <div class="panel-head">
+            <h2>현재 접속자</h2>
+            <span class="muted" id="onlineUpdated"></span>
+        </div>
+        <table>
+            <thead><tr><th>닉네임</th><th>서버</th><th>차원</th><th>플레이</th><th>AFK</th><th>접속 시각</th></tr></thead>
+            <tbody id="onlineBody"><tr><td colspan="6" class="empty">불러오는 중…</td></tr></tbody>
+        </table>
+    </section>
+
+    <section class="panel" id="panel-pending">
+        <div class="panel-head"><h2>승인 대기</h2></div>
+        <table>
+            <thead><tr><th>요청</th><th>닉네임</th><th>UUID</th><th>신청 시각</th><th>처리</th></tr></thead>
+            <tbody id="pendingBody"><tr><td colspan="5" class="empty">불러오는 중…</td></tr></tbody>
+        </table>
+    </section>
+
+    <section class="panel" id="panel-banned">
+        <div class="panel-head"><h2>밴 목록</h2></div>
+        <table>
+            <thead><tr><th>닉네임</th><th>UUID</th><th>사유</th><th>처리</th></tr></thead>
+            <tbody id="bannedBody"><tr><td colspan="4" class="empty">불러오는 중…</td></tr></tbody>
+        </table>
+    </section>
+
+    <section class="panel" id="panel-users">
+        <div class="panel-head">
+            <h2>마을원</h2>
+            <input id="userSearch" type="search" placeholder="닉네임 / UUID 검색">
+        </div>
+        <table>
+            <thead><tr><th>닉네임</th><th>상태</th><th>총 플레이</th><th>세션</th><th>마지막 접속</th><th>처리</th></tr></thead>
+            <tbody id="usersBody"><tr><td colspan="6" class="empty">불러오는 중…</td></tr></tbody>
+        </table>
+    </section>
+
+    <section class="panel" id="panel-audit">
+        <div class="panel-head">
+            <h2>로그</h2>
+            <button id="auditRefresh" class="ghost">새로고침</button>
+        </div>
+        <table>
+            <thead><tr><th>시각</th><th>처리자</th><th>작업</th><th>대상</th><th>상세</th></tr></thead>
+            <tbody id="auditBody"><tr><td colspan="5" class="empty">불러오는 중…</td></tr></tbody>
+        </table>
+    </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/app.js"></script>
+</body>
+</html>
