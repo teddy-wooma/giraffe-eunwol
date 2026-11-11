@@ -54,24 +54,24 @@ function isSecure(req) {
 const recentLogs = new Map()
 
 const SCANNER_LABELS = {
-    '146.70.': 'M247 Europe (스위스) VPN/호스팅',
-    '194.127.': 'Owl Limited (일본 오사카) 호스팅/VPN',
-    '5.78.': 'Hetzner (미국 오리건) 호스팅',
-    '209.38.': 'DigitalOcean (독일 프랑크푸르트) 호스팅',
-    '141.51.': 'DFN (독일 카셀) 연구망',
-    '172.241.': 'Leaseweb (미국 휴스턴) 호스팅',
-    '152.228.': 'OVH (프랑스 스트라스부르) 호스팅',
-    '18.136.': 'Amazon AWS (싱가포르) 호스팅',
-    '34.154.': 'Google Cloud (이탈리아 밀라노) 호스팅',
-    '35.237.': 'Google Cloud (미국) 호스팅',
-    '8.35.': 'Google Cloud (미국) 호스팅',
-    '57.129.': 'OVH (영국) 호스팅',
-    '45.32.': 'Vultr (일본) 호스팅',
-    '103.4.': 'M247 (미국 뉴욕) 호스팅',
-    '107.174.': 'HostPapa (미국 LA) 호스팅',
-    '47.88.': 'Alibaba Cloud (미국 LA) 호스팅',
-    '47.89.': 'Alibaba Cloud (미국 LA) 호스팅',
-    '47.254.': 'Alibaba Cloud (미국 LA) 호스팅'
+    '146.70.': 'M247 Europe · 스위스',
+    '194.127.': 'Owl Limited · 일본 오사카',
+    '5.78.': 'Hetzner · 미국 오리건',
+    '209.38.': 'DigitalOcean · 독일',
+    '141.51.': 'DFN · 독일',
+    '172.241.': 'Leaseweb · 미국',
+    '152.228.': 'OVH · 프랑스',
+    '57.129.': 'OVH · 영국',
+    '18.136.': 'Amazon AWS · 싱가포르',
+    '34.154.': 'Google Cloud · 이탈리아',
+    '35.237.': 'Google Cloud · 미국',
+    '8.35.': 'Google Cloud · 미국',
+    '45.32.': 'Vultr · 일본',
+    '103.4.': 'M247 · 미국',
+    '107.174.': 'HostPapa · 미국',
+    '47.88.': 'Alibaba Cloud · 미국 LA',
+    '47.89.': 'Alibaba Cloud · 미국 LA',
+    '47.254.': 'Alibaba Cloud · 미국 LA'
 }
 
 async function resolveOrg(db, ip) {
@@ -175,7 +175,7 @@ function createDashboard({ db, config }) {
     function looksLikeScanner(req, ip) {
         if (ip) {
             for (const prefix of Object.keys(SCANNER_LABELS)) {
-                if (ip.startsWith(prefix)) return SCANNER_LABELS[prefix]
+                if (ip.startsWith(prefix)) return '스캐너 (' + SCANNER_LABELS[prefix] + ')'
             }
             if (scannerPrefixes.some((prefix) => ip.startsWith(prefix))) {
                 return '스캐너 (추정)'
@@ -183,7 +183,10 @@ function createDashboard({ db, config }) {
         }
         const ua = String(req.headers['user-agent'] || '')
         const lower = ua.toLowerCase()
-        if (lower === '') return true
+        if (lower === '') return '스캐너 (추정)'
+        if (lower.includes('googlebot')) return '스캐너 (구글 크롤러)'
+        if (lower.includes('bingbot')) return '스캐너 (빙 크롤러)'
+        if (lower.includes('yandex')) return '스캐너 (얀덱스)'
         if (/(bot|crawler|spider|python|curl|wget|httpx|java\/|okhttp|go-http|censys|headless|phantom|selenium|scrapy|zgrab|nexus 5 build\/mra58n)/.test(lower)) {
             return '스캐너 (추정)'
         }
