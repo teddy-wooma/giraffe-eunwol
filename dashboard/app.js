@@ -136,6 +136,7 @@ async function loadMe() {
     const data = await api('/api/me')
     state.me = data.user
     $('meName').textContent = data.user.name
+    $('meName').title = '디스코드: ' + data.user.name
 }
 
 async function loadOverview() {
