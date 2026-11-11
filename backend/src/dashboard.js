@@ -108,6 +108,9 @@ async function resolveOrg(db, ip) {
 
 function createDashboard({ db, config }) {
     const secret = config.dashboardSecret || config.jwtSecret
+    const scannerPrefixes = (config.scannerPrefixes && config.scannerPrefixes.length
+        ? config.scannerPrefixes
+        : ['146.70.', '194.127.', '5.78.'])
 
     function readBody(req, limit = 1024 * 512) {
         return new Promise((resolve, reject) => {
