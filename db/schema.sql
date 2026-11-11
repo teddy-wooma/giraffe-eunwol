@@ -186,6 +186,17 @@ CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target_uuid, created_at);
 
 -- -----------------------------------------------------------------------------
+-- IP 소속 캐시 (스캐너 라벨)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ip_intel (
+    ip         TEXT PRIMARY KEY,
+    org        TEXT,
+    city       TEXT,
+    country    TEXT,
+    updated_at TEXT NOT NULL
+);
+
+-- -----------------------------------------------------------------------------
 -- 관리자 IP 매핑 (로그인 전 추정용)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS admin_ip_map (

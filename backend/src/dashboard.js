@@ -74,6 +74,38 @@ const SCANNER_LABELS = {
     '47.254.': 'Alibaba Cloud (미국 LA) 호스팅'
 }
 
+async function resolveOrg(db, ip) {
+    if (!ip) return null
+
+    const cached = db.prepare('SELECT * FROM ip_intel WHERE ip = ?').get(ip)
+    if (cached != null) {
+        const age = Date.now() - Date.parse(cached.updated_at)
+        if (!Number.isNaN(age) && age < 30 * 86400000) return cached
+    }
+
+    try {
+        const res = await fetch('http://ip-api.com/json/' + ip + '?fields=status,country,city,org,as', {
+            signal: AbortSignal.timeout(1500)
+        })
+        const data = await res.json()
+        if (data.status === 'success') {
+            const record = {
+                ip,
+                org: data.org || data.as || null,
+                city: data.city || null,
+                country: data.country || null
+            }
+            db.prepare(
+                'INSERT OR REPLACE INTO ip_intel (ip, org, city, country, updated_at) VALUES (?, ?, ?, ?, ?)'
+            ).run(ip, record.org, record.city, record.country, new Date().toISOString())
+            return record
+        }
+    } catch (_) {
+        // 조회 실패 시 무시
+    }
+    return null
+}
+
 function createDashboard({ db, config }) {
     const secret = config.dashboardSecret || config.jwtSecret
 
@@ -174,7 +206,7 @@ function createDashboard({ db, config }) {
         return db.prepare('SELECT * FROM admin_ip_map WHERE ip = ?').get(ip) || null
     }
 
-    function logVisit(action, req, ip, me) {
+    async function logVisit(action, req, ip, me) {
         const key = action + ':' + (me && me.sub ? me.sub : ip)
         const now = Date.now()
         if (recentLogs.get(key) != null && now - recentLogs.get(key) < 5 * 60 * 1000) {
@@ -194,7 +226,16 @@ function createDashboard({ db, config }) {
                 const scannerLabel = looksLikeScanner(req, ip)
                 if (scannerLabel != null) {
                     scanner = true
-                    actor = scannerLabel
+                    if (scannerLabel === '스캐너 (추정)') {
+                        const info = await resolveOrg(db, ip)
+                        if (info != null && (info.org || info.country)) {
+                            actor = '스캐너 (' + [info.org, info.city || info.country].filter(Boolean).join(' · ') + ')'
+                        } else {
+                            actor = '스캐너 (추정)'
+                        }
+                    } else {
+                        actor = scannerLabel
+                    }
                 }
             }
         }
@@ -473,7 +514,7 @@ function createDashboard({ db, config }) {
         if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
             const current = session(req)
             if (current != null) rememberAdminIp(ip, current)
-            logVisit(current ? 'dashboard_access' : 'dashboard_visit', req, ip, current)
+            await logVisit(current ? 'dashboard_access' : 'dashboard_visit', req, ip, current)
         }
         if (req.method === 'GET' && p === '/auth/discord') {
             logVisit('dashboard_login_attempt', req, ip, session(req))
