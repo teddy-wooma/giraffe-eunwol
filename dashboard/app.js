@@ -410,6 +410,22 @@ async function openUser(uuid) {
     }, 5000)
 }
 
+async function loadBlocked() {
+    const d = await api('/api/blocked')
+    const body = $('blockedBody')
+    if (!d.items || !d.items.length) {
+        body.innerHTML = '<tr><td colspan="4" class="empty">차단된 IP가 없습니다.</td></tr>'
+        return
+    }
+    body.innerHTML = d.items.map((row) => `
+        <tr>
+            <td class="mono">${esc(row.ip)}</td>
+            <td>${esc(row.reason || '-')}</td>
+            <td>${fmtTime(row.created_at)}</td>
+            <td><button class="action" data-action="unblock" data-ip="${esc(row.ip)}">해제</button></td>
+        </tr>`).join('')
+}
+
 function switchTab(tab) {
     state.tab = tab
     document.querySelectorAll('.tab').forEach((el) => {
@@ -424,11 +440,21 @@ function switchTab(tab) {
     if (tab === 'inactivity') loadInactivity().catch(() => {})
     if (tab === 'users') loadUsers($('userSearch').value).catch(() => {})
     if (tab === 'audit') loadAudit().catch(() => {})
+    if (tab === 'blocked') loadBlocked().catch(() => {})
 }
 
 async function handleAction(button) {
     const action = button.dataset.action
     try {
+        if (action === 'unblock') {
+            const ip = button.dataset.ip
+            if (!confirm(`${ip} 차단을 해제할까요?`)) return
+            await api(`/api/blocked/${encodeURIComponent(ip)}`, { method: 'DELETE' })
+            toast('차단을 해제했습니다.')
+            await loadBlocked()
+            return
+        }
+
         if (action === 'decide') {
             const id = button.dataset.id
             const decision = button.dataset.decision

@@ -39,6 +39,7 @@
         <button class="tab" data-tab="inactivity">미접 리포트</button>
         <button class="tab" data-tab="users">마을원</button>
         <button class="tab" data-tab="audit">로그</button>
+        <button class="tab" data-tab="blocked">차단 IP</button>
     </nav>
 
     <section class="panel active" id="panel-online">
@@ -100,6 +101,17 @@
             <tbody id="auditBody"><tr><td colspan="5" class="empty">불러오는 중…</td></tr></tbody>
         </table>
     </section>
+
+    <section class="panel" id="panel-blocked">
+        <div class="panel-head">
+            <h2>차단된 IP</h2>
+            <button id="blockedRefresh" class="ghost">새로고침</button>
+        </div>
+        <table>
+            <thead><tr><th>IP</th><th>사유</th><th>차단 시각</th><th>처리</th></tr></thead>
+            <tbody id="blockedBody"><tr><td colspan="4" class="empty">불러오는 중…</td></tr></tbody>
+        </table>
+    </section>
 </main>
 
 <div id="drawer" class="drawer hidden">
@@ -122,6 +134,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-<script src="/app.js?v=20261110d"></script>
+<script src="/app.js?v=20261110h"></script>
 </body>
 </html>

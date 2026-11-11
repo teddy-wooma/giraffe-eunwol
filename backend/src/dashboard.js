@@ -172,6 +172,17 @@ function createDashboard({ db, config }) {
         ).run(actor || null, action, targetUuid || null, payload == null ? null : JSON.stringify(payload), new Date().toISOString())
     }
 
+    function isBlockedIp(ip) {
+        if (!ip) return false
+        return db.prepare('SELECT 1 FROM blocked_ips WHERE ip = ?').get(ip) != null
+    }
+
+    function blockIp(ip, reason) {
+        if (!ip) return
+        db.prepare('INSERT OR IGNORE INTO blocked_ips (ip, reason, created_at) VALUES (?, ?, ?)')
+            .run(ip, reason || 'scanner', new Date().toISOString())
+    }
+
     function looksLikeScanner(req, ip) {
         if (ip) {
             for (const prefix of Object.keys(SCANNER_LABELS)) {
@@ -254,6 +265,8 @@ function createDashboard({ db, config }) {
             estimatedDiscordId: estimated ? estimated.discord_id : null,
             scanner
         })
+
+        return scanner ? { label: actor } : null
     }
 
     function serveStatic(res, name) {
@@ -517,10 +530,21 @@ function createDashboard({ db, config }) {
     return async function handle(req, res, url, ip) {
         const p = url.pathname
 
+        if (isBlockedIp(ip) && !(req.method === 'DELETE' && p.startsWith('/api/blocked/'))) {
+            res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' })
+            res.end('Forbidden')
+            return true
+        }
+
         if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
             const current = session(req)
             if (current != null) rememberAdminIp(ip, current)
-            await logVisit(current ? 'dashboard_access' : 'dashboard_visit', req, ip, current)
+            const verdict = await logVisit(current ? 'dashboard_access' : 'dashboard_visit', req, ip, current)
+            if (verdict != null) {
+                blockIp(ip, verdict.label)
+                sendJson(res, 403, { error: { code: 'BLOCKED', message: 'Forbidden' } })
+                return true
+            }
         }
         if (req.method === 'GET' && p === '/auth/discord') {
             logVisit('dashboard_login_attempt', req, ip, session(req))
@@ -566,6 +590,20 @@ function createDashboard({ db, config }) {
         }
 
         try {
+            if (p === '/api/blocked' && req.method === 'GET') {
+                const items = db.prepare('SELECT ip, reason, created_at FROM blocked_ips ORDER BY created_at DESC').all()
+                sendJson(res, 200, { ok: true, items })
+                return true
+            }
+
+            if (p.startsWith('/api/blocked/') && req.method === 'DELETE') {
+                const targetIp = decodeURIComponent(p.slice('/api/blocked/'.length))
+                db.prepare('DELETE FROM blocked_ips WHERE ip = ?').run(targetIp)
+                audit(me.name, 'unblock_ip', null, { ip: targetIp })
+                sendJson(res, 200, { ok: true })
+                return true
+            }
+
             if (p === '/api/presence' && req.method === 'POST') {
                 touchPresence(me, ip)
                 sendJson(res, 200, { ok: true, online: onlineAdmins() })
