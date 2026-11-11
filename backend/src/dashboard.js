@@ -179,8 +179,11 @@ function createDashboard({ db, config }) {
 
     function blockIp(ip, reason) {
         if (!ip) return
-        db.prepare('INSERT OR IGNORE INTO blocked_ips (ip, reason, created_at) VALUES (?, ?, ?)')
+        const result = db.prepare('INSERT OR IGNORE INTO blocked_ips (ip, reason, created_at) VALUES (?, ?, ?)')
             .run(ip, reason || 'scanner', new Date().toISOString())
+        if (result.changes > 0) {
+            audit('시스템', 'ip_blocked', null, { ip, reason: reason || 'scanner' })
+        }
     }
 
     function looksLikeScanner(req, ip) {
@@ -531,6 +534,12 @@ function createDashboard({ db, config }) {
         const p = url.pathname
 
         if (isBlockedIp(ip) && !(req.method === 'DELETE' && p.startsWith('/api/blocked/'))) {
+            const key = 'blocked:' + ip
+            const now = Date.now()
+            if (recentLogs.get(key) == null || now - recentLogs.get(key) > 10 * 60 * 1000) {
+                recentLogs.set(key, now)
+                audit('차단된 IP', 'blocked_request', null, { ip, path: req.url })
+            }
             res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' })
             res.end('Forbidden')
             return true
