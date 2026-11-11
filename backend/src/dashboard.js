@@ -116,6 +116,20 @@ function createDashboard({ db, config }) {
         ).run(actor || null, action, targetUuid || null, payload == null ? null : JSON.stringify(payload), new Date().toISOString())
     }
 
+    function looksLikeScanner(req) {
+        const ua = String(req.headers['user-agent'] || '')
+        const lower = ua.toLowerCase()
+        if (lower === '') return true
+        if (/(bot|crawler|spider|python|curl|wget|httpx|java\/|okhttp|go-http|censys|headless|phantom|selenium|scrapy|zgrab)/.test(lower)) {
+            return true
+        }
+        // 로그인 페이지로 직접 이동(우리 페이지를 거치지 않음) → 스캐너 가능성
+        if (req.url && req.url.startsWith('/auth/discord') && !req.headers.referer) {
+            return true
+        }
+        return false
+    }
+
     function rememberAdminIp(ip, me) {
         if (!ip || !me || !me.sub) return
         db.prepare(
@@ -141,10 +155,15 @@ function createDashboard({ db, config }) {
 
         let actor = me && me.name ? me.name : 'anonymous (' + (ip || 'unknown') + ')'
         let estimated = null
+        let scanner = false
+
         if (me == null) {
             estimated = lookupAdminIp(ip)
             if (estimated != null) {
                 actor = estimated.name + ' (추정)'
+            } else if (looksLikeScanner(req)) {
+                scanner = true
+                actor = '스캐너 (추정)'
             }
         }
 
@@ -153,7 +172,8 @@ function createDashboard({ db, config }) {
             ua: req.headers['user-agent'] || null,
             path: req.url,
             estimated: estimated != null,
-            estimatedDiscordId: estimated ? estimated.discord_id : null
+            estimatedDiscordId: estimated ? estimated.discord_id : null,
+            scanner
         })
     }
 
