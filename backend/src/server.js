@@ -285,7 +285,7 @@ async function launcherSessionStart(ctx) {
     )
 
     const tokens = issueTokens(config, user, sessionId)
-    audit(db, user.nickname || user.uuid, 'launcher_session_start', user.uuid, {
+    audit(db, '(마을원) ' + (user.nickname || user.uuid), 'launcher_session_start', user.uuid, {
         sessionId,
         launcherVersion: body.launcherVersion || null,
         ip: maskIp(ip)
