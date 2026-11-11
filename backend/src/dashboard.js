@@ -84,7 +84,7 @@ async function resolveOrg(db, ip) {
     }
 
     try {
-        const res = await fetch('http://ip-api.com/json/' + ip + '?fields=status,country,city,org,as', {
+        const res = await fetch('http://ip-api.com/json/' + ip + '?fields=status,country,city,org,as,hosting,proxy', {
             signal: AbortSignal.timeout(1500)
         })
         const data = await res.json()
@@ -93,11 +93,13 @@ async function resolveOrg(db, ip) {
                 ip,
                 org: data.org || data.as || null,
                 city: data.city || null,
-                country: data.country || null
+                country: data.country || null,
+                hosting: data.hosting ? 1 : 0,
+                proxy: data.proxy ? 1 : 0
             }
             db.prepare(
-                'INSERT OR REPLACE INTO ip_intel (ip, org, city, country, updated_at) VALUES (?, ?, ?, ?, ?)'
-            ).run(ip, record.org, record.city, record.country, new Date().toISOString())
+                'INSERT OR REPLACE INTO ip_intel (ip, org, city, country, hosting, proxy, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).run(ip, record.org, record.city, record.country, record.hosting, record.proxy, new Date().toISOString())
             return record
         }
     } catch (_) {
@@ -229,10 +231,7 @@ function createDashboard({ db, config }) {
     async function logVisit(action, req, ip, me) {
         const key = action + ':' + (me && me.sub ? me.sub : ip)
         const now = Date.now()
-        if (recentLogs.get(key) != null && now - recentLogs.get(key) < 5 * 60 * 1000) {
-            return
-        }
-        recentLogs.set(key, now)
+        const deduped = recentLogs.get(key) != null && now - recentLogs.get(key) < 5 * 60 * 1000
 
         let actor = me && me.name ? me.name : 'anonymous (' + (ip || 'unknown') + ')'
         let estimated = null
@@ -243,22 +242,31 @@ function createDashboard({ db, config }) {
             if (estimated != null) {
                 actor = estimated.name + ' (추정)'
             } else {
-                const scannerLabel = looksLikeScanner(req, ip)
-                if (scannerLabel != null) {
+                const label = looksLikeScanner(req, ip)
+                if (label != null) {
                     scanner = true
-                    if (scannerLabel === '스캐너 (추정)') {
+                    if (label === '스캐너 (추정)') {
                         const info = await resolveOrg(db, ip)
-                        if (info != null && (info.org || info.country)) {
-                            actor = '스캐너 (' + [info.org, info.city || info.country].filter(Boolean).join(' · ') + ')'
-                        } else {
-                            actor = '스캐너 (추정)'
-                        }
+                        actor = info != null
+                            ? '스캐너 (' + [info.org, info.city || info.country].filter(Boolean).join(' · ') + ')'
+                            : '스캐너 (추정)'
                     } else {
-                        actor = scannerLabel
+                        actor = label
+                    }
+                } else {
+                    const info = await resolveOrg(db, ip)
+                    if (info != null && (info.hosting === 1 || info.proxy === 1)) {
+                        scanner = true
+                        actor = '스캐너 (' + [info.org, info.city || info.country].filter(Boolean).join(' · ') + ')'
                     }
                 }
             }
         }
+
+        if (deduped) {
+            return scanner ? { label: actor } : null
+        }
+        recentLogs.set(key, now)
 
         audit(actor, action, null, {
             ip: ip || null,

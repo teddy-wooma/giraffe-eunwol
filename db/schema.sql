@@ -193,6 +193,8 @@ CREATE TABLE IF NOT EXISTS ip_intel (
     org        TEXT,
     city       TEXT,
     country    TEXT,
+    hosting    INTEGER NOT NULL DEFAULT 0,
+    proxy      INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL
 );
 
