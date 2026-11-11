@@ -53,6 +53,27 @@ function isSecure(req) {
 
 const recentLogs = new Map()
 
+const SCANNER_LABELS = {
+    '146.70.': 'M247 Europe (스위스) VPN/호스팅',
+    '194.127.': 'Owl Limited (일본 오사카) 호스팅/VPN',
+    '5.78.': 'Hetzner (미국 오리건) 호스팅',
+    '209.38.': 'DigitalOcean (독일 프랑크푸르트) 호스팅',
+    '141.51.': 'DFN (독일 카셀) 연구망',
+    '172.241.': 'Leaseweb (미국 휴스턴) 호스팅',
+    '152.228.': 'OVH (프랑스 스트라스부르) 호스팅',
+    '18.136.': 'Amazon AWS (싱가포르) 호스팅',
+    '34.154.': 'Google Cloud (이탈리아 밀라노) 호스팅',
+    '35.237.': 'Google Cloud (미국) 호스팅',
+    '8.35.': 'Google Cloud (미국) 호스팅',
+    '57.129.': 'OVH (영국) 호스팅',
+    '45.32.': 'Vultr (일본) 호스팅',
+    '103.4.': 'M247 (미국 뉴욕) 호스팅',
+    '107.174.': 'HostPapa (미국 LA) 호스팅',
+    '47.88.': 'Alibaba Cloud (미국 LA) 호스팅',
+    '47.89.': 'Alibaba Cloud (미국 LA) 호스팅',
+    '47.254.': 'Alibaba Cloud (미국 LA) 호스팅'
+}
+
 function createDashboard({ db, config }) {
     const secret = config.dashboardSecret || config.jwtSecret
 
@@ -117,20 +138,25 @@ function createDashboard({ db, config }) {
     }
 
     function looksLikeScanner(req, ip) {
-        if (ip && scannerPrefixes.some((prefix) => ip.startsWith(prefix))) {
-            return true
+        if (ip) {
+            for (const prefix of Object.keys(SCANNER_LABELS)) {
+                if (ip.startsWith(prefix)) return SCANNER_LABELS[prefix]
+            }
+            if (scannerPrefixes.some((prefix) => ip.startsWith(prefix))) {
+                return '스캐너 (추정)'
+            }
         }
         const ua = String(req.headers['user-agent'] || '')
         const lower = ua.toLowerCase()
         if (lower === '') return true
         if (/(bot|crawler|spider|python|curl|wget|httpx|java\/|okhttp|go-http|censys|headless|phantom|selenium|scrapy|zgrab|nexus 5 build\/mra58n)/.test(lower)) {
-            return true
+            return '스캐너 (추정)'
         }
         // 로그인 페이지로 직접 이동(우리 페이지를 거치지 않음) → 스캐너 가능성
         if (req.url && req.url.startsWith('/auth/discord') && !req.headers.referer) {
-            return true
+            return '스캐너 (추정)'
         }
-        return false
+        return null
     }
 
     function rememberAdminIp(ip, me) {
@@ -164,9 +190,12 @@ function createDashboard({ db, config }) {
             estimated = lookupAdminIp(ip)
             if (estimated != null) {
                 actor = estimated.name + ' (추정)'
-            } else if (looksLikeScanner(req, ip)) {
-                scanner = true
-                actor = '스캐너 (추정)'
+            } else {
+                const scannerLabel = looksLikeScanner(req, ip)
+                if (scannerLabel != null) {
+                    scanner = true
+                    actor = scannerLabel
+                }
             }
         }
 
