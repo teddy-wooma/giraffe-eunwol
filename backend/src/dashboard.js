@@ -182,7 +182,7 @@ function createDashboard({ db, config }) {
         const result = db.prepare('INSERT OR IGNORE INTO blocked_ips (ip, reason, created_at) VALUES (?, ?, ?)')
             .run(ip, reason || 'scanner', new Date().toISOString())
         if (result.changes > 0) {
-            audit('시스템', 'ip_blocked', null, { ip, reason: reason || 'scanner' })
+            audit('은월 코어', 'ip_blocked', null, { ip, reason: reason || 'scanner' })
         }
     }
 

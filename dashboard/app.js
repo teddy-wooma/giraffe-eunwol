@@ -119,7 +119,7 @@ function renderAdmins(list) {
         el.innerHTML = ''
         return
     }
-    el.innerHTML = list.map((a) => `<img class="presence-avatar" src="${avatarUrl(a.discord_id, a.avatar)}" title="${esc(a.name)}" alt="">`).join('')
+    el.innerHTML = list.map((a) => `<img class="presence-avatar" src="${avatarUrl(a.discord_id, a.avatar)}" title="디스코드: ${esc(a.name)}" alt="">`).join('')
         + `<span class="presence-count">관리자 ${list.length}명</span>`
 }
 
