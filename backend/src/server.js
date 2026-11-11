@@ -355,7 +355,7 @@ async function launcherSessionEnd(ctx) {
     db.prepare('UPDATE launcher_sessions SET ended_at = ? WHERE id = ? AND uuid = ?')
         .run(nowIso(), payload.sid, payload.sub)
     const endedUser = db.prepare('SELECT nickname FROM users WHERE uuid = ?').get(payload.sub)
-    audit(db, (endedUser && endedUser.nickname) || payload.sub, 'launcher_session_end', payload.sub, { sessionId: payload.sid })
+    audit(db, '(마을원) ' + ((endedUser && endedUser.nickname) || payload.sub), 'launcher_session_end', payload.sub, { sessionId: payload.sid })
     return { status: 200, payload: { ok: true } }
 }
 
