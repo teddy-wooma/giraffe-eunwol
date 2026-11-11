@@ -64,6 +64,31 @@ function esc(value) {
         .replace(/>/g, '&gt;')
 }
 
+const ACTION_LABELS = {
+    user_created: '마을원 등록',
+    approval_requested: '승인 요청',
+    approval_approved: '승인',
+    approval_denied: '거절',
+    approval_pending: '보류',
+    launcher_session_start: '런처 시작',
+    launcher_session_end: '런처 종료',
+    ban: '밴',
+    unban: '밴 해제',
+    user_deleted: '마을원 삭제',
+    dashboard_visit: '대시보드 방문',
+    dashboard_access: '대시보드 접속',
+    dashboard_login: '관리자 로그인',
+    dashboard_login_attempt: '로그인 시도',
+    dashboard_login_denied: '로그인 거부',
+    ip_blocked: 'IP 차단',
+    blocked_request: '차단 IP 접근',
+    unblock_ip: 'IP 차단 해제'
+}
+
+function actionLabel(action) {
+    return ACTION_LABELS[action] || action
+}
+
 function exileInfo(lastSeen) {
     if (!lastSeen) return null
     const seen = Date.parse(lastSeen)
@@ -267,7 +292,7 @@ async function loadAudit() {
         <tr>
             <td class="audit-time">${fmtTime(row.created_at)}</td>
             <td class="audit-actor">${esc(row.actor || 'system')}</td>
-            <td class="mono audit-action">${esc(row.action)}</td>
+            <td class="audit-action" title="${esc(row.action)}">${esc(actionLabel(row.action))}</td>
             <td class="mono audit-target">${esc(row.target_uuid || '-')}</td>
             <td class="mono audit-payload-cell"><div class="audit-payload">${esc(row.payload_json || '')}</div></td>
         </tr>`).join('')
