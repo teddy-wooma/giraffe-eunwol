@@ -116,11 +116,14 @@ function createDashboard({ db, config }) {
         ).run(actor || null, action, targetUuid || null, payload == null ? null : JSON.stringify(payload), new Date().toISOString())
     }
 
-    function looksLikeScanner(req) {
+    function looksLikeScanner(req, ip) {
+        if (ip && scannerPrefixes.some((prefix) => ip.startsWith(prefix))) {
+            return true
+        }
         const ua = String(req.headers['user-agent'] || '')
         const lower = ua.toLowerCase()
         if (lower === '') return true
-        if (/(bot|crawler|spider|python|curl|wget|httpx|java\/|okhttp|go-http|censys|headless|phantom|selenium|scrapy|zgrab)/.test(lower)) {
+        if (/(bot|crawler|spider|python|curl|wget|httpx|java\/|okhttp|go-http|censys|headless|phantom|selenium|scrapy|zgrab|nexus 5 build\/mra58n)/.test(lower)) {
             return true
         }
         // 로그인 페이지로 직접 이동(우리 페이지를 거치지 않음) → 스캐너 가능성
@@ -161,7 +164,7 @@ function createDashboard({ db, config }) {
             estimated = lookupAdminIp(ip)
             if (estimated != null) {
                 actor = estimated.name + ' (추정)'
-            } else if (looksLikeScanner(req)) {
+            } else if (looksLikeScanner(req, ip)) {
                 scanner = true
                 actor = '스캐너 (추정)'
             }
