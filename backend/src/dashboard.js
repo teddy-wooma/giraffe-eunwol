@@ -432,7 +432,7 @@ function createDashboard({ db, config }) {
         return {
             online: one('SELECT COUNT(*) AS c FROM launcher_sessions WHERE ended_at IS NULL AND last_heartbeat_at > ?', twoMinAgo),
             inGame: one('SELECT COUNT(*) AS c FROM game_sessions WHERE left_at IS NULL'),
-            pending: one(`SELECT COUNT(*) AS c FROM approval_requests WHERE status = 'pending'`),
+            pending: one(`SELECT COUNT(*) AS c FROM approval_requests WHERE status IN ('pending', 'held')`),
             banned: one(`SELECT COUNT(*) AS c FROM users WHERE status = 'banned'`),
             todayUnique: one('SELECT COUNT(DISTINCT uuid) AS c FROM launcher_sessions WHERE started_at >= ?', today),
             totalUsers: one('SELECT COUNT(*) AS c FROM users')

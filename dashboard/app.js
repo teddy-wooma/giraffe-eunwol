@@ -209,18 +209,21 @@ async function loadPending() {
         body.innerHTML = '<tr><td colspan="5" class="empty">대기 중인 요청이 없습니다.</td></tr>'
         return
     }
-    body.innerHTML = d.pending.map((row) => `
+    body.innerHTML = d.pending.map((row) => {
+        const held = row.status === 'held'
+        return `
         <tr>
-            <td class="mono">${esc(row.id)}</td>
+            <td class="mono">${esc(row.id)} ${held ? '<span class="chip pending">보류</span>' : ''}</td>
             <td>${esc(row.nickname || '-')}</td>
             <td class="mono">${esc(row.uuid)}</td>
             <td>${fmtTime(row.requested_at)}</td>
             <td>
                 <button class="action primary" data-action="decide" data-id="${esc(row.id)}" data-decision="approved">승인</button>
                 <button class="action danger" data-action="decide" data-id="${esc(row.id)}" data-decision="denied">거절</button>
-                <button class="action" data-action="decide" data-id="${esc(row.id)}" data-decision="held">보류</button>
+                ${held ? '' : `<button class="action" data-action="decide" data-id="${esc(row.id)}" data-decision="held">보류</button>`}
             </td>
-        </tr>`).join('')
+        </tr>`
+    }).join('')
 }
 
 async function loadBanned() {
