@@ -22,20 +22,126 @@ const DEFAULT_GAME_OPTIONS = {
     lang: 'ko_kr',
     guiScale: '2',
     renderDistance: '12',
-    simulationDistance: '12'
+    simulationDistance: '12',
+    'key_key.attack': 'key.mouse.left',
+    'key_key.use': 'key.mouse.right',
+    'key_key.forward': 'key.keyboard.w',
+    'key_key.left': 'key.keyboard.a',
+    'key_key.back': 'key.keyboard.s',
+    'key_key.right': 'key.keyboard.d',
+    'key_key.jump': 'key.keyboard.space',
+    'key_key.sneak': 'key.keyboard.left.shift',
+    'key_key.sprint': 'key.keyboard.left.control',
+    'key_key.drop': 'key.keyboard.q',
+    'key_key.inventory': 'key.keyboard.e',
+    'key_key.chat': 'key.keyboard.t',
+    'key_key.playerlist': 'key.keyboard.tab',
+    'key_key.pickItem': 'key.mouse.middle',
+    'key_key.command': 'key.keyboard.slash',
+    'key_key.friends': 'key.keyboard.o',
+    'key_key.socialInteractions': 'key.keyboard.p',
+    'key_key.toggleGui': 'key.keyboard.f1',
+    'key_key.toggleSpectatorShaderEffects': 'key.keyboard.f4',
+    'key_key.screenshot': 'key.keyboard.f2',
+    'key_key.togglePerspective': 'key.keyboard.f5',
+    'key_key.smoothCamera': 'key.keyboard.unknown',
+    'key_key.fullscreen': 'key.keyboard.f11',
+    'key_key.spectatorOutlines': 'key.keyboard.unknown',
+    'key_key.spectatorHotbar': 'key.mouse.middle',
+    'key_key.swapOffhand': 'key.keyboard.f',
+    'key_key.saveToolbarActivator': 'key.keyboard.c',
+    'key_key.loadToolbarActivator': 'key.keyboard.x',
+    'key_key.advancements': 'key.keyboard.l',
+    'key_key.quickActions': 'key.keyboard.g',
+    'key_key.debug.overlay': 'key.keyboard.f3',
+    'key_key.debug.modifier': 'key.keyboard.f3',
+    'key_key.hotbar.1': 'key.keyboard.1',
+    'key_key.hotbar.2': 'key.keyboard.2',
+    'key_key.hotbar.3': 'key.keyboard.3',
+    'key_key.hotbar.4': 'key.keyboard.4',
+    'key_key.hotbar.5': 'key.keyboard.5',
+    'key_key.hotbar.6': 'key.keyboard.6',
+    'key_key.hotbar.7': 'key.keyboard.7',
+    'key_key.hotbar.8': 'key.keyboard.8',
+    'key_key.hotbar.9': 'key.keyboard.9',
+    'key_key.debug.reloadChunk': 'key.keyboard.a',
+    'key_key.debug.showHitboxes': 'key.keyboard.b',
+    'key_key.debug.clearChat': 'key.keyboard.d',
+    'key_key.debug.crash': 'key.keyboard.c',
+    'key_key.debug.showChunkBorders': 'key.keyboard.g',
+    'key_key.debug.showAdvancedTooltips': 'key.keyboard.h',
+    'key_key.debug.copyRecreateCommand': 'key.keyboard.i',
+    'key_key.debug.spectate': 'key.keyboard.n',
+    'key_key.debug.switchGameMode': 'key.keyboard.f4',
+    'key_key.debug.debugOptions': 'key.keyboard.f6',
+    'key_key.debug.focusPause': 'key.keyboard.p',
+    'key_key.debug.dumpDynamicTextures': 'key.keyboard.s',
+    'key_key.debug.reloadResourcePacks': 'key.keyboard.t',
+    'key_key.debug.profiling': 'key.keyboard.l',
+    'key_key.debug.copyLocation': 'key.keyboard.c',
+    'key_key.debug.dumpVersion': 'key.keyboard.v',
+    'key_key.debug.profilingChart': 'key.keyboard.1',
+    'key_key.debug.fpsCharts': 'key.keyboard.2',
+    'key_key.debug.networkCharts': 'key.keyboard.3',
+    'key_key.debug.lightmapTexture': 'key.keyboard.4',
+    'key_key.aquaticlog.config': 'key.keyboard.k',
+    'key_key.autorun.toggle': 'key.keyboard.v',
+    'key_key.commandkeys.main.edit': 'key.keyboard.k',
+    'key_key.entityculling.toggle': 'key.keyboard.unknown',
+    'key_key.entityculling.toggleBoxes': 'key.keyboard.unknown',
+    'key_key.gfactionbar.editor': 'key.keyboard.f7',
+    'key_key.modmenu.open_menu': 'key.keyboard.unknown',
+    'key_gui.xaero_zoom_in': 'key.keyboard.unknown',
+    'key_gui.xaero_zoom_out': 'key.keyboard.unknown',
+    'key_gui.xaero_new_waypoint': 'key.keyboard.b',
+    'key_gui.xaero_waypoints_key': 'key.keyboard.u',
+    'key_gui.xaero_enlarge_map': 'key.keyboard.z',
+    'key_gui.xaero_toggle_map': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_waypoints': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_map_waypoints': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_slime': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_grid': 'key.keyboard.unknown',
+    'key_gui.xaero_instant_waypoint': 'key.keyboard.keypad.add',
+    'key_gui.xaero_switch_waypoint_set': 'key.keyboard.unknown',
+    'key_gui.xaero_display_all_sets': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_light_overlay': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_entity_radar': 'key.keyboard.unknown',
+    'key_gui.xaero_reverse_entity_radar': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_manual_cave_mode': 'key.keyboard.unknown',
+    'key_gui.xaero_alternative_list_players': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_tracked_players_on_map': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_tracked_players_in_world': 'key.keyboard.unknown',
+    'key_gui.xaero_toggle_pac_chunk_claims': 'key.keyboard.unknown',
+    'key_gui.xaero_minimap_settings': 'key.keyboard.y',
+    'key_gui.xaero_minimap_server_profiles': 'key.keyboard.unknown',
+    'key_gui.xaero_open_map': 'key.keyboard.m',
+    'key_gui.xaero_open_settings': 'key.keyboard.right.bracket',
+    'key_gui.xaero_world_map_server_settings': 'key.keyboard.unknown',
+    'key_gui.xaero_map_zoom_in': 'key.keyboard.unknown',
+    'key_gui.xaero_map_zoom_out': 'key.keyboard.unknown',
+    'key_gui.xaero_quick_confirm': 'key.keyboard.right.shift',
+    'key_gui.xaero_toggle_dimension': 'key.keyboard.unknown',
+    'key_iris.keybind.reload': 'key.keyboard.r',
+    'key_iris.keybind.toggleShaders': 'key.keyboard.k',
+    'key_iris.keybind.shaderPackSelection': 'key.keyboard.i',
+    'key_iris.keybind.wireframe': 'key.keyboard.unknown'
 }
 
 
 class ProcessBuilder {
 
-    constructor(distroServer, vanillaManifest, modManifest, authUser, launcherVersion){
-        this.gameDir = path.join(ConfigManager.getInstanceDirectory(), distroServer.rawServer.id)
+    constructor(distroServer, vanillaManifest, modManifest, authUser, launcherVersion, instanceDir, modToken, modRefreshToken, apiBaseUrl, secureModsDir){
+        this.gameDir = instanceDir || path.join(ConfigManager.getInstanceDirectory(), distroServer.rawServer.id)
         this.commonDir = ConfigManager.getCommonDirectory()
         this.server = distroServer
         this.vanillaManifest = vanillaManifest
         this.modManifest = modManifest
         this.authUser = authUser
         this.launcherVersion = launcherVersion
+        this.modToken = modToken || null
+        this.modRefreshToken = modRefreshToken || null
+        this.apiBaseUrl = apiBaseUrl || null
+        this.secureModsDir = secureModsDir || null
         this.forgeModListFile = path.join(this.gameDir, 'forgeMods.list')
         this.fmlDir = path.join(this.gameDir, 'forgeModList.json')
         this.llDir = path.join(this.gameDir, 'liteloaderModList.json')
@@ -238,8 +344,15 @@ class ProcessBuilder {
         // 토큰·UUID 는 로그에 남기지 않습니다. (로그를 공유/업로드해도 안전하도록)
         pbSanitizeArgs(loggableArgs).forEach((a, i) => pbLog('ARGS', '  [' + i + '] ' + a))
 
+        const env = { ...process.env }
+        if(this.modToken){ env.EUNWOL_MOD_TOKEN = this.modToken }
+        if(this.launcherVersion){ env.EUNWOL_LAUNCHER_VERSION = this.launcherVersion }
+        if(this.modRefreshToken){ env.EUNWOL_MOD_REFRESH = this.modRefreshToken }
+        if(this.apiBaseUrl){ env.EUNWOL_API_URL = this.apiBaseUrl }
+
         const child = child_process.spawn(javaExecPath, args, {
             cwd: this.gameDir,
+            env,
             detached: ConfigManager.getLaunchDetached()
         })
 
@@ -429,7 +542,18 @@ class ProcessBuilder {
 
 
     constructModList(mods) {
-        const writeBuffer = mods.map(mod => {
+        let selectedMods = mods
+        // Dawn은 런처 설정에서 선택적으로 끌 수 있다. 기본값은 활성화.
+        // EUNWOL_NO_DAWN=1은 개발/테스트용 강제 비활성화로 계속 지원한다.
+        const dawnDisabled = process.env.EUNWOL_NO_DAWN === '1'
+            || (typeof ConfigManager !== 'undefined' && ConfigManager.getDawnEnabled && !ConfigManager.getDawnEnabled())
+        if (dawnDisabled) {
+            selectedMods = mods.filter((mod) => {
+                const value = this.usingFabricLoader ? mod.getPath() : mod.getExtensionlessMavenIdentifier()
+                return !/[\\/]generated[\\/]dawn[\\/]/i.test(String(value))
+            })
+        }
+        const writeBuffer = selectedMods.map(mod => {
             return this.usingFabricLoader ? mod.getPath() : mod.getExtensionlessMavenIdentifier()
         }).join('\n')
 
@@ -479,6 +603,10 @@ class ProcessBuilder {
         let args = []
 
 
+        if(this.secureModsDir != null){
+            const secureList = Array.isArray(this.secureModsDir) ? this.secureModsDir : [this.secureModsDir]
+            if(secureList.length > 0) args.push('-Dfabric.addMods=' + secureList.join(path.delimiter))
+        }
         args.push('-cp')
         args.push(this.classpathArg(mods, tempNativePath).join(ProcessBuilder.getClasspathSeparator()))
 
@@ -508,6 +636,12 @@ class ProcessBuilder {
 
 
         let args = this.vanillaManifest.arguments.jvm
+
+        let argsList = args
+        if(this.secureModsDir != null){
+            const secureList = Array.isArray(this.secureModsDir) ? this.secureModsDir : [this.secureModsDir]
+            if(secureList.length > 0) argsList.push('-Dfabric.addMods=' + secureList.join(path.delimiter))
+        }
 
 
         if(this.modManifest.arguments.jvm != null) {

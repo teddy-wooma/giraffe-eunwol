@@ -93,6 +93,29 @@ function setLaunchEnabled(val){
 }
 
 
+
+document.querySelectorAll('.dualSlot').forEach(btn => {
+    btn.addEventListener('click', () => startSlot(btn.dataset.slot))
+})
+const dualBusyOk = document.getElementById('dualBusyOk')
+if(dualBusyOk != null){
+    dualBusyOk.addEventListener('click', () => {
+        const modal = document.getElementById('dualBusyModal')
+        if(modal != null) modal.classList.remove('open')
+    })
+}
+const dualCancelBtn = document.getElementById('dualCancel')
+if(dualCancelBtn != null) dualCancelBtn.addEventListener('click', closeDualModal)
+const dualConfirmBtn = document.getElementById('dualConfirm')
+if(dualConfirmBtn != null){
+    dualConfirmBtn.addEventListener('click', () => {
+        if(dualPending == null || dualPending.account == null) return
+        ConfigManager.setDualSlot(dualPending.slot, dualPending.account)
+        ConfigManager.save()
+        closeDualModal()
+        renderDualSlots()
+    })
+}
 document.getElementById('launch_button').addEventListener('click', async e => {
     loggerLanding.info('Launching game..')
 
@@ -142,6 +165,212 @@ document.getElementById('avatarOverlay').onclick = async e => {
 }
 
 
+
+// ---------------------------------------------------------------------------
+// 듀얼 계정 슬롯 (본계정 / 부계정)
+// ---------------------------------------------------------------------------
+
+const slotRuntime = {
+    main: { booting: false, running: false, startedAt: 0, timer: null, launchStarted: false },
+    alt: { booting: false, running: false, startedAt: 0, timer: null, launchStarted: false }
+}
+let bootingSlot = null
+
+function pad2(n){ return String(n).padStart(2, '0') }
+
+function formatElapsed(ms){
+    const total = Math.floor(ms / 1000)
+    const d = Math.floor(total / 86400)
+    const h = Math.floor((total % 86400) / 3600)
+    const m = Math.floor((total % 3600) / 60)
+    const s = total % 60
+    return `${d}:${pad2(h)}:${pad2(m)}:${pad2(s)}`
+}
+
+function startSlotTimer(slot){
+    stopSlotTimer(slot)
+    const rt = slotRuntime[slot]
+    const tick = () => {
+        const el = document.getElementById(slot === 'main' ? 'dualTimerMain' : 'dualTimerAlt')
+        if(el != null && rt.running) el.textContent = formatElapsed(Date.now() - rt.startedAt)
+    }
+    rt.timer = setInterval(tick, 1000)
+    tick()
+}
+
+function stopSlotTimer(slot){
+    const rt = slotRuntime[slot]
+    if(rt.timer != null){ clearInterval(rt.timer); rt.timer = null }
+}
+
+function resetSlotRuntime(slot){
+    const rt = slotRuntime[slot]
+    if(rt == null) return
+    stopSlotTimer(slot)
+    rt.booting = false
+    rt.running = false
+    rt.startedAt = 0
+    rt.launchStarted = false
+    if(bootingSlot === slot) bootingSlot = null
+    const timerEl = document.getElementById(slot === 'main' ? 'dualTimerMain' : 'dualTimerAlt')
+    if(timerEl != null) timerEl.textContent = ''
+}
+
+function showBusyWarning(message){
+    const modal = document.getElementById('dualBusyModal')
+    const text = document.getElementById('dualBusyText')
+    if(modal == null || text == null){ return }
+    text.textContent = message
+    modal.classList.add('open')
+}
+
+let dualPending = null
+
+function dualAccountFor(slot){
+    const info = ConfigManager.getDualSlots()[slot]
+    if(info == null) return null
+    return ConfigManager.getAuthAccounts()[info.uuid] || null
+}
+
+function renderDualSlots(){
+    const area = document.getElementById('dualSlotArea')
+    const single = document.getElementById('singleLaunchArea')
+    if(area == null || single == null) return
+    const accounts = Object.values(ConfigManager.getAuthAccounts() || {})
+    const dual = accounts.length >= 2
+    area.classList.toggle('active', dual)
+    single.style.display = dual ? 'none' : ''
+    const serverBtn = document.getElementById('server_selection_button')
+    if(serverBtn != null) serverBtn.style.display = dual ? 'none' : ''
+    if(!dual) return
+    for(const slot of ['main', 'alt']){
+        const nameEl = document.getElementById(slot === 'main' ? 'dualNameMain' : 'dualNameAlt')
+        const acc = dualAccountFor(slot)
+        nameEl.textContent = acc != null ? acc.displayName : '계정 선택'
+        const btn = document.querySelector(`.dualSlot[data-slot="${slot}"]`)
+        if(btn != null) btn.classList.toggle('unbound', acc == null)
+
+        const rt = slotRuntime[slot]
+        const playEl = document.getElementById(slot === 'main' ? 'dualPlayMain' : 'dualPlayAlt')
+        const timerEl = document.getElementById(slot === 'main' ? 'dualTimerMain' : 'dualTimerAlt')
+        if(playEl != null){
+            playEl.textContent = rt.running ? '실행중' : (rt.booting ? '부팅 중...' : 'PLAY')
+        }
+        if(timerEl != null && !rt.running) timerEl.textContent = ''
+    }
+}
+
+function closeDualModal(){
+    const modal = document.getElementById('dualSlotModal')
+    if(modal != null) modal.classList.remove('open')
+    dualPending = null
+}
+
+function openDualModal(slot){
+    const modal = document.getElementById('dualSlotModal')
+    const list = document.getElementById('dualAccountList')
+    const warning = document.getElementById('dualWarning')
+    const confirm = document.getElementById('dualConfirm')
+    const title = document.getElementById('dualModalTitle')
+    if(modal == null || list == null) return
+
+    const other = slot === 'main' ? 'alt' : 'main'
+    const otherInfo = ConfigManager.getDualSlots()[other]
+    const accounts = Object.values(ConfigManager.getAuthAccounts() || {})
+        .filter(a => otherInfo == null || a.uuid !== otherInfo.uuid)
+
+    if(accounts.length === 0){
+        alert('귀속할 수 있는 계정이 없습니다. 먼저 계정을 추가해 주세요.')
+        return
+    }
+
+    dualPending = { slot, account: null }
+    title.textContent = slot === 'main' ? '본계정 선택' : '부계정 선택'
+    warning.classList.remove('show')
+    warning.textContent = ''
+    confirm.disabled = true
+
+    list.innerHTML = ''
+    for(const acc of accounts){
+        const row = document.createElement('button')
+        row.className = 'dualAccountRow'
+        row.innerHTML = `<span class="accName">${acc.displayName || acc.username}</span><span class="accUuid">${acc.uuid}</span>`
+        row.onclick = () => {
+            dualPending.account = acc
+            list.querySelectorAll('.dualAccountRow').forEach(el => el.classList.remove('selected'))
+            row.classList.add('selected')
+            const role = slot === 'main' ? '본계정' : '부계정'
+            warning.textContent = `⚠️ 이 버튼은 ${role} [${acc.displayName}] 계정에 영구 귀속됩니다. 인스턴스 폴더가 분리되며, 런처를 재설치하기 전까지 계정을 변경할 수 없습니다.`
+            warning.classList.add('show')
+            confirm.disabled = false
+        }
+        list.appendChild(row)
+    }
+
+    modal.classList.add('open')
+}
+
+async function startSlot(slot){
+    const acc = dualAccountFor(slot)
+    if(acc == null){
+        openDualModal(slot)
+        return
+    }
+    const rt = slotRuntime[slot]
+    if(rt.running){
+        showBusyWarning('이미 실행 중인 클라이언트입니다.')
+        return
+    }
+    if(rt.booting){
+        showBusyWarning('이미 부팅 중인 클라이언트입니다.')
+        return
+    }
+    if(bootingSlot != null){
+        showBusyWarning('다른 클라이언트가 부팅 중입니다. 해당 클라이언트가 완전히 켜진 뒤에 실행해 주세요.')
+        return
+    }
+    // 본계/부계 각각의 만료된 Microsoft 토큰을 갱신한다.
+    // 실패 시 다른 계정 토큰으로 대체하지 않고 실행을 중단한다.
+    if(acc.type === 'microsoft'){
+        const valid = await require('./assets/js/authmanager').validateAccount(acc.uuid)
+        if(!valid){
+            showLaunchFailure('계정 로그인 만료', '선택한 계정의 로그인을 갱신하지 못했습니다. 런처에서 다시 로그인해 주세요.')
+            return
+        }
+    }
+    rt.booting = true
+    bootingSlot = slot
+    renderDualSlots()
+    try {
+        const server = (await DistroAPI.getDistribution()).getServerById(ConfigManager.getSelectedServer())
+        const jExe = ConfigManager.getJavaExecutable(ConfigManager.getSelectedServer())
+        if(jExe == null){
+            await asyncSystemScan(server.effectiveJavaOptions)
+            return
+        }
+        setLaunchDetails(Lang.queryJS('landing.launch.pleaseWait'))
+        toggleLaunchArea(true)
+        setLaunchPercentage(0, 100)
+        const details = await validateSelectedJvm(ensureJavaDirIsRoot(jExe), server.effectiveJavaOptions.supported)
+        if(details != null){
+            await dlAsync(true, slot)
+            if(slotRuntime[slot].booting && !slotRuntime[slot].launchStarted){
+                resetSlotRuntime(slot)
+                renderDualSlots()
+            }
+        } else {
+            await asyncSystemScan(server.effectiveJavaOptions)
+            resetSlotRuntime(slot)
+            renderDualSlots()
+        }
+    } catch(err) {
+        loggerLanding.error('Unhandled error in dual slot launch.', err)
+        resetSlotRuntime(slot)
+        renderDualSlots()
+        showLaunchFailure(Lang.queryJS('landing.dlAsync.errorDuringLaunchTitle'), err.message || String(err))
+    }
+}
+
 function updateSelectedAccount(authUser){
     let username = Lang.queryJS('landing.selectedAccount.noAccountSelected')
     if(authUser != null){
@@ -168,6 +397,7 @@ function updateSelectedAccount(authUser){
         }
     }
     user_text.innerHTML = username
+    renderDualSlots()
 }
 updateSelectedAccount(ConfigManager.getSelectedAccount())
 
@@ -414,7 +644,7 @@ const GAME_LAUNCH_REGEX = /^\[.+\]: (?:MinecraftForge .+ Initialized|ModLauncher
 const MIN_LINGER = 5000
 
 
-async function writeTelemetryConfig() {
+async function writeTelemetryConfig(instanceDir = null) {
     try {
         const fs = require('fs-extra')
         const path = require('path')
@@ -423,7 +653,7 @@ async function writeTelemetryConfig() {
         if (info == null || !info.modToken) {
             return
         }
-        const configDir = path.join(ConfigManager.getInstanceDirectory(), ConfigManager.getSelectedServer(), 'config')
+        const configDir = path.join(instanceDir || ConfigManager.getInstanceDirectory(), ConfigManager.getSelectedServer(), 'config')
         await fs.ensureDir(configDir)
         await fs.writeJson(path.join(configDir, 'eunwol-telemetry.json'), {
             backendUrl: info.backendUrl,
@@ -436,7 +666,78 @@ async function writeTelemetryConfig() {
     }
 }
 
-async function dlAsync(login = true) {
+function installOptionalMods(instanceDir) {
+    try {
+        const fs = require('fs')
+        const path = require('path')
+        const { app } = require('electron')
+        const sourceDir = app != null && app.isPackaged
+            ? path.join(process.resourcesPath, 'optional-mods')
+            : path.join(__dirname, '..', '..', '..', '..', 'optional-mods')
+        if (!fs.existsSync(sourceDir)) return
+        const targetDir = path.join(instanceDir, 'mods')
+        fs.mkdirSync(targetDir, { recursive: true })
+        for (const name of fs.readdirSync(sourceDir)) {
+            if (!name.endsWith('.jar')) continue
+            const enabled = path.join(targetDir, name)
+            const disabled = enabled + '.disabled'
+            if (fs.existsSync(enabled) || fs.existsSync(disabled)) continue
+            fs.copyFileSync(path.join(sourceDir, name), disabled)
+            loggerLanding.info('[optional] installed disabled: ' + name)
+        }
+    } catch (err) {
+        loggerLanding.warn('[optional] install failed: ' + err.message)
+    }
+}
+
+function enforceKeybinds(instanceDir) {
+    try {
+        const fs = require('fs')
+        const path = require('path')
+        const file = path.join(instanceDir, 'options.txt')
+        if (!fs.existsSync(file)) return
+        const targets = new Set([
+            'key_key.chat',
+            'key_iris.keybind.reload',
+            'key_gui.xaero_minimap_settings'
+        ])
+        const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/)
+        let changed = false
+        const out = lines.map((line) => {
+            const idx = line.indexOf(':')
+            if (idx < 0) return line
+            const key = line.slice(0, idx)
+            if (!targets.has(key)) return line
+            const next = key + ':key.keyboard.unknown'
+            if (next !== line) changed = true
+            return next
+        })
+        if (changed) fs.writeFileSync(file, out.join('\n'), 'utf8')
+    } catch (_) { /* ignore */ }
+}
+
+async function ensureLatestLauncher(notify) {
+    try {
+        const info = await require('electron').ipcRenderer.invoke('launcher:checkVersion')
+        if (info == null || info.ok !== true || info.outdated !== true) {
+            return true
+        }
+        if (notify) {
+            await require('electron').ipcRenderer.invoke('launcher:showOutdated', info)
+        }
+        require('electron').ipcRenderer.send('autoUpdateAction', 'initAutoUpdater', true)
+        require('electron').ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
+        showLandingUpdateNotice({ version: info.latest }, false)
+        return false
+    } catch (_) {
+        return true
+    }
+}
+
+async function dlAsync(login = true, slot = null) {
+    if (!(await ensureLatestLauncher(true))) {
+        return
+    }
     logLaunchSection('게임 실행 준비 시작')
 
 
@@ -456,9 +757,17 @@ async function dlAsync(login = true) {
     }
 
     const serv = distro.getServerById(ConfigManager.getSelectedServer())
+    const slotInfo = slot != null ? ConfigManager.getDualSlots()[slot] : null
+    const authUser = slot != null
+        ? (slotInfo != null ? (ConfigManager.getAuthAccounts()[slotInfo.uuid] || null) : null)
+        : ConfigManager.getSelectedAccount()
+    const instanceDir = slot != null ? ConfigManager.getInstanceDirectoryForSlot(slot) : ConfigManager.getInstanceDirectoryForSlot('main')
+    installOptionalMods(instanceDir)
+    enforceKeybinds(instanceDir)
+    const instanceBase = slot != null ? ConfigManager.getInstanceBaseForSlot(slot) : ConfigManager.getInstanceDirectory()
 
     if(login) {
-        if(ConfigManager.getSelectedAccount() == null){
+        if(authUser == null){
             loggerLanding.error('You must be logged into an account.')
             return
         }
@@ -466,7 +775,7 @@ async function dlAsync(login = true) {
 
     // 마을 승인 게이트: 승인되지 않은 계정은 게임을 실행할 수 없습니다.
     if(login) {
-        const approved = await Gate.ensureApproved(ConfigManager.getSelectedAccount())
+        const approved = await Gate.ensureApproved(authUser)
         if(!approved) {
             setLaunchDetails('')
             toggleLaunchArea(false)
@@ -474,7 +783,7 @@ async function dlAsync(login = true) {
         }
     }
 
-    await writeTelemetryConfig()
+    await writeTelemetryConfig(instanceBase)
 
     setLaunchDetails(Lang.queryJS('landing.dlAsync.pleaseWait'))
     toggleLaunchArea(true)
@@ -482,7 +791,7 @@ async function dlAsync(login = true) {
 
     const fullRepairModule = new FullRepair(
         ConfigManager.getCommonDirectory(),
-        ConfigManager.getInstanceDirectory(),
+        instanceBase,
         ConfigManager.getLauncherDirectory(),
         ConfigManager.getSelectedServer(),
         DistroAPI.isDevMode()
@@ -557,9 +866,56 @@ async function dlAsync(login = true) {
     const versionData = await mojangIndexProcessor.getVersionJson()
 
     if(login) {
-        const authUser = ConfigManager.getSelectedAccount()
         loggerLaunchSuite.info(`Sending selected account (${authUser.displayName}) to ProcessBuilder.`)
-        let pb = new ProcessBuilder(serv, versionData, modLoaderData, authUser, remote.app.getVersion())
+        try {
+            await require('electron').ipcRenderer.invoke('backend:cleanupSecureMods', require('path').join(instanceDir, 'mods'))
+        } catch (_) { /* ignore */ }
+        let secureMods = null
+        try {
+            secureMods = await require('electron').ipcRenderer.invoke('backend:secureMods')
+        } catch (_) {
+            secureMods = { ok: false, error: '보안 모드 초기화 실패' }
+        }
+        if (secureMods == null || secureMods.ok !== true) {
+            showLaunchFailure('보안 모드 로드 실패', (secureMods && secureMods.error) || '보안 모드를 불러오지 못했습니다.')
+            return
+        }
+        try {
+            await require('electron').ipcRenderer.invoke('backend:buildGiraffePack', instanceDir)
+        } catch (_) { /* ignore */ }
+        let telemetryInfo = null
+        try {
+            telemetryInfo = await require('electron').ipcRenderer.invoke('backend:telemetry')
+        } catch (_) { /* ignore */ }
+        let slotModToken = null
+        let slotRefreshToken = null
+        if (slot == null) {
+            slotModToken = telemetryInfo != null ? telemetryInfo.modToken : null
+            slotRefreshToken = telemetryInfo != null ? telemetryInfo.refreshToken : null
+        } else {
+            const slotAccount = dualAccountFor(slot)
+            if (slotAccount == null || slotAccount.accessToken == null) {
+                showLaunchFailure('계정 세션 실패', '슬롯 계정의 로그인 정보가 없습니다. 런처에서 다시 로그인해 주세요.')
+                return
+            }
+            let session = null
+            try {
+                session = await require('electron').ipcRenderer.invoke('backend:sessionFor', slotAccount.accessToken)
+            } catch (err) {
+                session = { ok: false, error: err.message }
+            }
+            if (session == null || session.ok !== true || session.modToken == null) {
+                showLaunchFailure('계정 세션 실패', (session && session.error) || '슬롯 계정의 모드 토큰을 발급하지 못했습니다.')
+                return
+            }
+            slotModToken = session.modToken
+            slotRefreshToken = session.refreshToken || null
+        }
+        let pb = new ProcessBuilder(serv, versionData, modLoaderData, authUser, remote.app.getVersion(), instanceDir,
+            slotModToken,
+            slotRefreshToken,
+            telemetryInfo != null ? telemetryInfo.backendUrl : null,
+            secureMods.jars)
         setLaunchDetails(Lang.queryJS('landing.dlAsync.launchingGame'))
 
 
@@ -567,6 +923,14 @@ async function dlAsync(login = true) {
 
         const onLoadComplete = () => {
             toggleLaunchArea(false)
+            if(slot != null){
+                slotRuntime[slot].booting = false
+                slotRuntime[slot].running = true
+                slotRuntime[slot].startedAt = Date.now()
+                if(bootingSlot === slot) bootingSlot = null
+                startSlotTimer(slot)
+                renderDualSlots()
+            }
             if(hasRPC){
                 DiscordWrapper.updateDetails(Lang.queryJS('landing.discord.loading'))
                 proc.stdout.on('data', gameStateChange)
@@ -609,6 +973,7 @@ async function dlAsync(login = true) {
         try {
 
             logLaunch('LAUNCH', 'ProcessBuilder.build() 호출 — 게임 프로세스를 띄웁니다')
+            if(slot != null) slotRuntime[slot].launchStarted = true
             proc = pb.build()
 
             // 여기서도 오류를 잡습니다. 핸들러가 없으면 조용히 실패해
@@ -627,6 +992,17 @@ async function dlAsync(login = true) {
 
             proc.stdout.on('data', tempListener)
             proc.stderr.on('data', gameErrorListener)
+
+            if(slot != null){
+                proc.on('close', () => {
+                    resetSlotRuntime(slot)
+                    renderDualSlots()
+                })
+                proc.on('error', () => {
+                    resetSlotRuntime(slot)
+                    renderDualSlots()
+                })
+            }
 
             setLaunchDetails(Lang.queryJS('landing.dlAsync.doneEnjoyServer'))
 
@@ -654,6 +1030,155 @@ async function dlAsync(login = true) {
 
 }
 
+
+
+function readTail(file, maxBytes = 400000) {
+    try {
+        const fs = require('fs')
+        if(!fs.existsSync(file)) return null
+        const stat = fs.statSync(file)
+        const start = Math.max(0, stat.size - maxBytes)
+        const fd = fs.openSync(file, 'r')
+        const buf = Buffer.alloc(stat.size - start)
+        fs.readSync(fd, buf, 0, buf.length, start)
+        fs.closeSync(fd)
+        return buf.toString('utf8')
+    } catch (err) {
+        return '[read failed] ' + err.message
+    }
+}
+
+function readFiltered(file, maxLines = 300) {
+    try {
+        const fs = require('fs')
+        if(!fs.existsSync(file)) return null
+        const text = fs.readFileSync(file, 'utf8')
+        const lines = text.split(/\r?\n/)
+        const matched = lines.filter((line) => /(ERROR|WARN|FATAL|Exception|Caused by|crash|OutOfMemory)/i.test(line))
+        return matched.slice(-maxLines).join('\n')
+    } catch (err) {
+        return '[read failed] ' + err.message
+    }
+}
+
+function findLatestCrash(dir) {
+    try {
+        const fs = require('fs')
+        const path = require('path')
+        const crashDir = path.join(dir, 'crash-reports')
+        if(!fs.existsSync(crashDir)) return null
+        const files = fs.readdirSync(crashDir).filter((f) => f.endsWith('.txt')).sort()
+        if(files.length === 0) return null
+        return readTail(path.join(crashDir, files[files.length - 1]), 120000)
+    } catch (_) { return null }
+}
+
+function collectSupportReport() {
+    const os = require('os')
+    const fs = require('fs')
+    const path = require('path')
+    const { spawnSync } = require('child_process')
+
+    const account = ConfigManager.getSelectedAccount()
+    const server = ConfigManager.getSelectedServer()
+    const javaExe = server != null ? ConfigManager.getJavaExecutable(server) : null
+
+    let javaVersion = null
+    if(javaExe != null){
+        try {
+            const r = spawnSync(javaExe, ['-version'], { encoding: 'utf8', timeout: 5000 })
+            javaVersion = ((r.stdout || '') + (r.stderr || '')).trim().slice(0, 2000)
+        } catch (err) { javaVersion = 'error: ' + err.message }
+    }
+
+    const dataDir = ConfigManager.getDataDirectory()
+    let disk = null
+    try {
+        const st = fs.statfsSync(dataDir)
+        disk = {
+            freeGB: Math.round((st.bsize * st.bavail) / 1073741824 * 10) / 10,
+            totalGB: Math.round((st.bsize * st.blocks) / 1073741824 * 10) / 10
+        }
+    } catch (_) { disk = null }
+
+    const mainDir = ConfigManager.getInstanceDirectoryForSlot ? ConfigManager.getInstanceDirectoryForSlot('main') : null
+    const altDir = ConfigManager.getInstanceDirectoryForSlot ? ConfigManager.getInstanceDirectoryForSlot('alt') : null
+    const launcherLog = path.join(ConfigManager.getLauncherDirectory(), 'logs', 'launcher.log')
+
+    const report = {
+        launcherVersion: remote.app.getVersion(),
+        sentAt: new Date().toISOString(),
+        account: account != null ? { uuid: account.uuid, displayName: account.displayName } : null,
+        server,
+        os: {
+            platform: os.platform(),
+            release: os.release(),
+            arch: os.arch(),
+            hostname: os.hostname(),
+            uptimeSec: Math.round(os.uptime()),
+            cpu: (os.cpus()[0] || {}).model || null,
+            cpuCount: os.cpus().length
+        },
+        memory: {
+            totalGB: Math.round(os.totalmem() / 1073741824 * 10) / 10,
+            freeGB: Math.round(os.freemem() / 1073741824 * 10) / 10,
+            process: process.memoryUsage()
+        },
+        disk,
+        java: { path: javaExe, version: javaVersion },
+        paths: { dataDir, mainDir, altDir },
+        logs: {
+            launcher: readTail(launcherLog),
+            mainLatest: mainDir != null ? readTail(path.join(mainDir, 'logs', 'latest.log')) : null,
+            altLatest: altDir != null ? readTail(path.join(altDir, 'logs', 'latest.log')) : null,
+            launcherErrors: readFiltered(launcherLog),
+            mainErrors: mainDir != null ? readFiltered(path.join(mainDir, 'logs', 'latest.log')) : null,
+            altErrors: altDir != null ? readFiltered(path.join(altDir, 'logs', 'latest.log')) : null,
+            crashReport: mainDir != null ? findLatestCrash(mainDir) : null
+        }
+    }
+
+    // 1MB 제한에 맞게 로그 축소
+    // 1차: 로그 꼬리를 80KB로, 2차: 40KB로 축소 (오류 필터/크래시 리포트는 유지)
+    for(const limit of [200000, 80000]){
+        if(Buffer.byteLength(JSON.stringify(report)) <= 4000000) break
+        for(const k of ['launcher', 'mainLatest', 'altLatest']){
+            if(report.logs[k] != null) report.logs[k] = report.logs[k].slice(-limit)
+        }
+    }
+    return report
+}
+
+function bindSendLogsButton() {
+    const btn = document.getElementById('sendLogsButton')
+    if(btn == null) return
+    btn.addEventListener('click', async () => {
+        if(!confirm('진단 로그(시스템 정보/메모리/디스크/자바/최근 로그)를 서버로 보낼까요?')) return
+        const original = btn.textContent
+        btn.disabled = true
+        btn.textContent = '보내는 중...'
+        try {
+            const payload = collectSupportReport()
+            const reportAccount = ConfigManager.getSelectedAccount()
+        if (reportAccount != null && reportAccount.accessToken != null) {
+            payload.accessToken = reportAccount.accessToken
+        }
+        const res = await require('electron').ipcRenderer.invoke('backend:sendReport', payload)
+            if(res.ok){
+                alert('로그를 보냈습니다. 감사합니다!')
+            } else {
+                alert('로그 전송에 실패했습니다.\n' + (res.error || res.body && res.body.error && res.body.error.message || ('HTTP ' + res.status)))
+            }
+        } catch (err) {
+            alert('로그 전송 중 오류: ' + err.message)
+        } finally {
+            btn.disabled = false
+            btn.textContent = original
+        }
+    })
+}
+
+bindSendLogsButton()
 
 function restorePendingSettingsTab(){
     const pending = ConfigManager.getPendingSettingsTab()
@@ -732,3 +1257,5 @@ ipcRenderer.on('autoUpdateNotification', (event, arg, info) => {
 
 // uibinder 가 메인 화면을 띄우기 전에 이 스크립트의 초기화가 끝났는지 확인합니다.
 window.__landingReady = true
+
+setTimeout(() => { ensureLatestLauncher(true).catch(() => {}) }, 1200)

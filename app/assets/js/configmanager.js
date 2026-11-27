@@ -70,7 +70,8 @@ const DEFAULT_CONFIG = {
             resHeight: 720,
             fullscreen: false,
             autoConnect: true,
-            launchDetached: true
+            launchDetached: true,
+            dawnEnabled: true
         },
         launcher: {
             allowPrerelease: false,
@@ -86,7 +87,10 @@ const DEFAULT_CONFIG = {
             pendingSettingsTab: null,
 
 
-            pendingWelcome: false
+            pendingWelcome: false,
+
+
+            dualSlots: { main: null, alt: null }
         }
     },
     newsCache: {
@@ -200,6 +204,37 @@ exports.getCommonDirectory = function(){
 
 exports.getInstanceDirectory = function(){
     return path.join(exports.getDataDirectory(), 'instances')
+}
+
+const DUAL_SLOT_BASE = { main: 'instances', alt: 'instances-alt' }
+
+exports.getDualSlots = function(){
+    const slots = config != null && config.settings != null && config.settings.launcher != null
+        ? config.settings.launcher.dualSlots
+        : null
+    return slots || { main: null, alt: null }
+}
+
+exports.setDualSlot = function(slot, account){
+    if(slot !== 'main' && slot !== 'alt') return
+    if(config.settings.launcher.dualSlots == null){
+        config.settings.launcher.dualSlots = { main: null, alt: null }
+    }
+    config.settings.launcher.dualSlots[slot] = account == null
+        ? null
+        : { uuid: account.uuid, name: account.displayName || account.username || account.uuid }
+}
+
+exports.getInstanceBaseForSlot = function(slot){
+    const dir = DUAL_SLOT_BASE[slot] || 'instances'
+    return path.join(exports.getDataDirectory(), dir)
+}
+
+exports.getInstanceDirectoryForSlot = function(slot){
+    const server = exports.getSelectedServer()
+    const base = exports.getInstanceBaseForSlot(slot)
+    if(server == null) return base
+    return path.join(base, server)
 }
 
 
@@ -557,6 +592,17 @@ exports.getLaunchDetached = function(def = false){
 
 exports.setLaunchDetached = function(launchDetached){
     config.settings.game.launchDetached = launchDetached
+}
+
+
+exports.getDawnEnabled = function(def = false){
+    if(def) return DEFAULT_CONFIG.settings.game.dawnEnabled
+    return config.settings.game.dawnEnabled !== false
+}
+
+
+exports.setDawnEnabled = function(dawnEnabled){
+    config.settings.game.dawnEnabled = dawnEnabled !== false
 }
 
 

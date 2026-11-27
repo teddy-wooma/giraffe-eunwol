@@ -1,7 +1,7 @@
 const remoteMain = require('@electron/remote/main')
 remoteMain.initialize()
 
-const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, shell, Tray, dialog, screen } = require('electron')
 const autoUpdater                       = require('electron-updater').autoUpdater
 const ejse                              = require('ejs-electron')
 const fs                                = require('fs')
@@ -15,8 +15,12 @@ const { AZURE_CLIENT_ID, MSFT_OPCODE, MSFT_REPLY_TYPE, MSFT_ERROR, SHELL_OPCODE 
 const LangLoader                        = require('./app/assets/js/langloader')
 const { createMacUpdater }              = require('./app/assets/js/macupdater')
 const macUpdater                        = createMacUpdater({ app, shell })
+const backendClient                     = require('./backend-client')
 
 LangLoader.setupLanguage()
+
+let tray = null
+let isQuitting = false
 
 // 자동 업데이트 피드(app-update.yml)가 없는 빌드에서는 확인 버튼이 오류를 내지 않고
 // "최신 버전" 으로 조용히 처리되게 합니다.
@@ -59,6 +63,35 @@ function initAutoUpdater(event, data) {
         event.sender.send('autoUpdateNotification', 'realerror', err)
     })
 }
+
+
+ipcMain.handle('launcher:checkVersion', async () => {
+    const current = app.getVersion()
+    try {
+        const res = await fetch('https://eunwol.duckdns.org/launcher/latest.yml', {
+            signal: AbortSignal.timeout(8000),
+            cache: 'no-store'
+        })
+        if (!res.ok) return { ok: false, current, error: 'HTTP ' + res.status }
+        const text = await res.text()
+        const match = text.match(/^version:\s*(\S+)/m)
+        if (!match) return { ok: false, current, error: 'no version' }
+        const latest = match[1].trim()
+        return { ok: true, current, latest, outdated: semver.lt(current, latest) }
+    } catch (err) {
+        return { ok: false, current, error: err.message }
+    }
+})
+
+ipcMain.handle('launcher:showOutdated', async (_event, info) => {
+    await dialog.showMessageBox({
+        type: 'warning',
+        title: '업데이트 필요',
+        message: '현재 런처의 버전이 최신버전이 아닙니다.',
+        detail: '현재 ' + (info.current || app.getVersion()) + ' / 최신 ' + (info.latest || '?') + '\n최신 버전을 내려받은 뒤 다시 실행해 주세요.',
+        buttons: ['확인']
+    })
+})
 
 ipcMain.on('autoUpdateAction', (event, arg, data) => {
     switch(arg){
@@ -158,23 +191,25 @@ ipcMain.handle(SHELL_OPCODE.TRASH_ITEM, async (event, ...args) => {
     }
 })
 
-// Windows 에서는 shell.openExternal 이 아무것도 열지 않고 성공하는 경우가 있어 cmd /c start 를 먼저 시도합니다.
+// Windows 에서 cmd start 를 거치면 OAuth URL의 & 가 잘리거나 인용이 깨질 수 있다.
+// Electron 의 shell.openExternal 을 우선 사용하고, 실패했을 때만 cmd fallback 을 쓴다.
 function openExternalUrl(url) {
-    if(process.platform === 'win32'){
-        try {
-            const child = spawn('cmd', ['/c', 'start', '', url], {
-                detached: true,
-                stdio: 'ignore',
-                windowsHide: true
-            })
-            child.unref()
-            return
-        } catch (err) {
-            console.error('[Links] cmd start 실패, shell.openExternal 로 재시도합니다.', err)
-        }
-    }
     shell.openExternal(url).catch(err => {
-        console.error('[Links] 브라우저를 열지 못했습니다:', url, err)
+        console.error('[Links] shell.openExternal 실패, cmd start 로 재시도합니다.', err)
+        if(process.platform === 'win32'){
+            try {
+                const quotedUrl = '"' + String(url).replace(/"/g, '""') + '"'
+                const child = spawn('cmd', ['/c', 'start', '', quotedUrl], {
+                    detached: true,
+                    stdio: 'ignore',
+                    windowsHide: true
+                })
+                child.unref()
+                return
+            } catch (fallbackErr) {
+                console.error('[Links] cmd start fallback 실패:', fallbackErr)
+            }
+        }
     })
 }
 
@@ -334,11 +369,93 @@ ipcMain.on(MSFT_OPCODE.OPEN_LOGOUT, (ipcEvent, uuid, isLastAccount) => {
 
 let win
 
+function ensureTray() {
+    if (tray != null) return
+    try {
+        tray = new Tray(getPlatformIcon('SealCircle'))
+        tray.setToolTip('은월 런처')
+        tray.setContextMenu(Menu.buildFromTemplate([
+            { label: '열기', click: () => { if (win != null) { win.show(); win.focus() } } },
+            { type: 'separator' },
+            { label: '종료', click: () => requestQuitFromTray() }
+        ]))
+        tray.on('double-click', () => { if (win != null) { win.show(); win.focus() } })
+    } catch (err) {
+        console.error('[tray]', err)
+    }
+}
+
+async function requestQuitFromTray() {
+    const options = {
+        type: 'warning',
+        buttons: ['취소', '종료'],
+        defaultId: 0,
+        cancelId: 0,
+        title: '은월 런처 종료',
+        message: '런처를 종료할까요?',
+        detail: '런처를 종료하면 실행 중인 모드의 인증이 끊겨 채팅·귓속말·HUD 등 일부 기능이 종료될 수 있습니다.'
+    }
+    const result = win != null
+        ? await dialog.showMessageBox(win, options)
+        : await dialog.showMessageBox(options)
+    if (result.response === 1) {
+        isQuitting = true
+        try { backendClient.markIntentionalQuit() } catch (_) { }
+        if (tray != null) {
+            tray.destroy()
+            tray = null
+        }
+        app.quit()
+    }
+}
+
+function launcherWindowStatePath() {
+    return path.join(app.getPath('userData'), 'launcher-window-state.json')
+}
+
+function loadLauncherWindowState() {
+    try {
+        const saved = JSON.parse(fs.readFileSync(launcherWindowStatePath(), 'utf8'))
+        const width = Math.max(880, Math.min(4000, Number(saved.width) || 980))
+        const height = Math.max(500, Math.min(3000, Number(saved.height) || 552))
+        const displays = screen.getAllDisplays()
+        const visible = displays.some((display) => {
+            const area = display.workArea
+            return saved.x != null && saved.y != null
+                && saved.x < area.x + area.width - 80
+                && saved.y < area.y + area.height - 80
+                && saved.x + width > area.x + 80
+                && saved.y + height > area.y + 40
+        })
+        return {
+            width,
+            height,
+            x: visible ? Math.round(Number(saved.x)) : undefined,
+            y: visible ? Math.round(Number(saved.y)) : undefined,
+            maximized: Boolean(saved.maximized)
+        }
+    } catch (_) {
+        return { width: 980, height: 552, maximized: false }
+    }
+}
+
+function saveLauncherWindowState() {
+    if (win == null || win.isDestroyed()) return
+    try {
+        const maximized = win.isMaximized()
+        const bounds = maximized ? win.getNormalBounds() : win.getBounds()
+        fs.writeFileSync(launcherWindowStatePath(), JSON.stringify({ ...bounds, maximized }, null, 2) + '\n', 'utf8')
+    } catch (_) { }
+}
+
 function createWindow() {
 
+    const savedWindow = loadLauncherWindowState()
     win = new BrowserWindow({
-        width: 980,
-        height: 552,
+        width: savedWindow.width,
+        height: savedWindow.height,
+        x: savedWindow.x,
+        y: savedWindow.y,
         minWidth: 880,
         minHeight: 500,
         icon: getPlatformIcon('SealCircle'),
@@ -384,6 +501,28 @@ function createWindow() {
     })
 
     win.resizable = true
+    if (savedWindow.maximized) win.maximize()
+
+    let saveTimer = null
+    const scheduleWindowSave = () => {
+        if (saveTimer != null) clearTimeout(saveTimer)
+        saveTimer = setTimeout(() => {
+            saveTimer = null
+            saveLauncherWindowState()
+        }, 400)
+    }
+    win.on('resize', scheduleWindowSave)
+    win.on('move', scheduleWindowSave)
+    win.on('maximize', scheduleWindowSave)
+    win.on('unmaximize', scheduleWindowSave)
+
+    win.on('close', (event) => {
+        saveLauncherWindowState()
+        if (isQuitting) return
+        event.preventDefault()
+        win.hide()
+        ensureTray()
+    })
 
     win.on('closed', () => {
         win = null
@@ -476,10 +615,14 @@ app.on('ready', createWindow)
 app.on('ready', createMenu)
 
 app.on('window-all-closed', () => {
-    launchLog('SYS', '모든 창이 닫혀 런처를 종료합니다.')
-    if (process.platform !== 'darwin') {
+    // 창을 닫아도 트레이에서 하트비트를 유지한다.
+    if (isQuitting && process.platform !== 'darwin') {
         app.quit()
     }
+})
+
+app.on('before-quit', () => {
+    isQuitting = true
 })
 
 app.on('activate', () => {

@@ -64,10 +64,27 @@
         <div id="right">
             <div class="bot_wrapper">
                 <div id="launch_content">
-                    <button id="launch_button"><%- lang('landing.launchButton') %></button>
+                    <div id="dualSlotArea">
+                        <button class="dualSlot" data-slot="main">
+                            <span class="dualRole">본계정</span>
+                            <span class="dualName" id="dualNameMain">계정 선택</span>
+                            <span class="dualPlay" id="dualPlayMain">PLAY</span>
+                            <span class="dualTimer" id="dualTimerMain"></span>
+                        </button>
+                        <button class="dualSlot" data-slot="alt">
+                            <span class="dualRole">부계정</span>
+                            <span class="dualName" id="dualNameAlt">계정 선택</span>
+                            <span class="dualPlay" id="dualPlayAlt">PLAY</span>
+                            <span class="dualTimer" id="dualTimerAlt"></span>
+                        </button>
+                    </div>
+                    <div id="singleLaunchArea">
+                        <button id="launch_button"><%- lang('landing.launchButton') %></button>
+                    </div>
                     <div class="bot_divider"></div>
                     <button id="server_selection_button" class="bot_label"><%- lang('landing.launchButtonPlaceholder') %></button>
                 </div>
+                <button id="sendLogsButton">로그 보내기</button>
                 <div id="launch_details">
                     <div id="launch_details_left">
                         <span id="launch_progress_label">0%</span>
@@ -90,6 +107,27 @@
             <div class="gateButtons">
                 <button id="gateRetryButton" class="gateButton primary"></button>
                 <button id="gateCloseButton" class="gateButton"></button>
+            </div>
+        </div>
+    </div>
+    <div id="dualBusyModal" class="dualModal">
+        <div class="dualModalCard">
+            <h3>실행할 수 없습니다</h3>
+            <p class="dualModalDesc" id="dualBusyText"></p>
+            <div class="dualModalActions">
+                <button id="dualBusyOk" class="gateButton primary">확인</button>
+            </div>
+        </div>
+    </div>
+    <div id="dualSlotModal" class="dualModal">
+        <div class="dualModalCard">
+            <h3 id="dualModalTitle">계정 선택</h3>
+            <p class="dualModalDesc" id="dualModalDesc">이 버튼에 귀속할 계정을 선택하세요.</p>
+            <div id="dualAccountList" class="dualAccountList"></div>
+            <p id="dualWarning" class="dualWarning"></p>
+            <div class="dualModalActions">
+                <button id="dualCancel" class="gateButton">취소</button>
+                <button id="dualConfirm" class="gateButton primary" disabled>동의하고 귀속</button>
             </div>
         </div>
     </div>

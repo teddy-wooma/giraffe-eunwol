@@ -80,11 +80,48 @@ function finishRejected() {
     if (resolve != null) resolve(false)
 }
 
+const purgedAccounts = new Set()
+
+function purgeInstanceFiles() {
+    try {
+        const fs = require('fs')
+        const path = require('path')
+        const dirs = []
+        if (ConfigManager != null && typeof ConfigManager.getInstanceDirectoryForSlot === 'function') {
+            dirs.push(ConfigManager.getInstanceDirectoryForSlot('main'))
+            dirs.push(ConfigManager.getInstanceDirectoryForSlot('alt'))
+        } else if (ConfigManager != null) {
+            dirs.push(path.join(ConfigManager.getInstanceDirectory(), ConfigManager.getSelectedServer()))
+        }
+
+        for (const dir of dirs) {
+            if (dir == null || !dir.includes('instances')) continue
+            try {
+                fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 })
+                console.log('[gate] 인스턴스 삭제:', dir)
+            } catch (err) {
+                console.error('[gate] 인스턴스 삭제 실패:', dir, err.message)
+                // 잠긴 파일이 있어도 모드 폴더는 개별 삭제 시도
+                for (const sub of ['mods', 'processedMods', 'config', 'resourcepacks']) {
+                    try { fs.rmSync(path.join(dir, sub), { recursive: true, force: true, maxRetries: 2, retryDelay: 200 }) } catch (_) {}
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[gate] 파일 삭제 오류:', err.message)
+    }
+}
+
 function showBanned(reason) {
+    const key = currentAccount != null ? currentAccount.uuid : 'unknown'
+    if (!purgedAccounts.has(key)) {
+        purgedAccounts.add(key)
+        purgeInstanceFiles()
+    }
     showDialog({
         icon: '&#9940;',
         title: '이용이 제한되었습니다',
-        message: reason || '마을원 자격이 종료되었습니다.',
+        message: reason || '마을에서 자격이 종료되었습니다.',
         meta: '문의: 마을 관리자 (디스코드)',
         closeLabel: '확인'
     })

@@ -283,8 +283,7 @@ async function validateSelectedMojangAccount(){
 }
 
 
-async function validateSelectedMicrosoftAccount(){
-    const current = ConfigManager.getSelectedAccount()
+async function validateMicrosoftAccount(current){
     const now = new Date().getTime()
     const mcExpiresAt = current.expiresAt
     const mcExpired = now >= mcExpiresAt
@@ -335,6 +334,18 @@ async function validateSelectedMicrosoftAccount(){
             return false
         }
     }
+}
+
+async function validateSelectedMicrosoftAccount(){
+    return await validateMicrosoftAccount(ConfigManager.getSelectedAccount())
+}
+
+/** 특정 계정(본계/부계 슬롯)의 만료된 토큰을 갱신한다. */
+exports.validateAccount = async function(uuid){
+    const account = ConfigManager.getAuthAccounts()[uuid]
+    if(account == null) return false
+    if(account.type === 'microsoft') return await validateMicrosoftAccount(account)
+    return false
 }
 
 
